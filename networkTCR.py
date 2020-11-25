@@ -13,7 +13,7 @@ import networkx as nx
 import markov_clustering as mcl
 
 
-class networkTCR:
+class clustering:
     
     def __init__(self, _set):
         self._set = _set
@@ -102,10 +102,10 @@ class networkTCR:
             cluster_ids[i] = list(identifiers[i] for i in clusters[i])
             
         # Generate nodelist
-        nodelist = {"TCR":[], "cluster":[]}
+        nodelist = {"CDR3":[], "cluster":[]}
         for c in cluster_ids:
             for m in cluster_ids[c]:
-                nodelist["TCR"].append(m)
+                nodelist["CDR3"].append(m)
                 nodelist["cluster"].append(c)
         nodelist = pd.DataFrame(data=nodelist)
         
@@ -161,3 +161,34 @@ class networkTCR:
                 consensus += "X"
         
         return consensus
+    
+    
+
+class metrics:
+    
+    def __init__(self, nodelist, epidata):
+        self.nodelist = nodelist
+        self.epidata = epidata
+        
+
+        
+    def purity(self, weighted=True):
+        '''
+        nodelist: pd.DataFrame with columns ["CDR3", "cluster"]
+        epidata: 'ground truth', pd.DataFrame of CDR3 sequences with corresponding epitope specificity (columns=["CDR3", "Epitope"])
+        '''
+        self.epidata = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
+        self.epidata.drop_duplicates(inplace=True)
+        
+        gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
+        pty = [gt[gt["cluster"]==i]["Epitope"].value_counts()[0] / len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
+        pty_avg = np.average(pty)
+        
+        if weighted == True:
+            size = [len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
+            pty = [pty[n] * np.log(size[n]) for n in range(len(size))]
+            pty_avg = sum(pty) / sum(np.log(size))
+        
+        return pty_avg
+    
+    
