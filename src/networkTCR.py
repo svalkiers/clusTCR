@@ -165,35 +165,60 @@ class clustering:
     
 
 class metrics:
-    
+    # NOTE: You can only calculate these cluster metrics if the CDR3 sequences are labelled (i.e. epitope specificity is known)!
     def __init__(self, nodelist, epidata):
         self.nodelist = nodelist # pd.DataFrame with columns ["CDR3", "cluster"]
         self.epidata = epidata # 'ground truth', pd.DataFrame of CDR3 sequences with corresponding epitope specificity (columns=["CDR3", "Epitope"])
         
-
         
+        
+    def retention(self):
+        '''
+        Cluster retention is the fraction of sequences that has been assigned to any cluster.
+        '''
+        return len(self.nodelist) / len(self.epidata["CDR3"].unique())
+    
+        
+    
     def purity(self, weighted=True):
         '''
         Cluster purity is fraction of CDR3 sequences within a single cluster that target the same epitope.
         This metric describes the purity of that cluster, in terms of epitope specificity.
+        
+        This function also provides a baseline estimation of cluster purity, by permuting the cluster assignment
+        column and calculating purity of the permuted data using the same procedure.
         '''
+        
         # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
         self.epidata = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
         self.epidata.drop_duplicates(inplace=True)
         
+        # Make new column "permuted", which forms a baseline (as if the clustering was random)
+        self.nodelist["permuted"] = np.random.permutation(self.nodelist["cluster"])
+                
         # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
         gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
         
         # Calculate purity of each individual cluster and take average
-        pty = [gt[gt["cluster"]==i]["Epitope"].value_counts()[0] / len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-        pty_avg = np.average(pty)
+        # Regular cluster assignments
+        pty_reg = [gt[gt["cluster"]==i]["Epitope"].value_counts()[0] / len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
+        pty_avg_reg = np.average(pty_reg)
+        
+        # Permuted cluster assignments
+        pty_base = [gt[gt["permuted"]==i]["Epitope"].value_counts()[0] / len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
+        pty_avg_base = np.average(pty_base)
         
         # Recalculate purity by weighting clusters based on their size
         if weighted == True:
-            size = [len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-            pty = [pty[n] * np.log(size[n]) for n in range(len(size))]
-            pty_avg = sum(pty) / sum(np.log(size))
+            
+            # Regular
+            size_reg = [len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
+            pty_reg = [pty_reg[n] * np.log(size_reg[n]) for n in range(len(size_reg))]
+            pty_avg_reg = sum(pty_reg) / sum(np.log(size_reg))
+            
+            # Permuted
+            size_per = [len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
+            pty_base = [pty_base[n] * np.log(size_per[n]) for n in range(len(size_per))]
+            pty_avg_base = sum(pty_base) / sum(np.log(size_per))            
         
-        return pty_avg
-    
-    
+        return {"Regular":pty_avg_reg, "Baseline":pty_avg_base}
