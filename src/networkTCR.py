@@ -18,6 +18,7 @@ class clustering:
     def __init__(self, _set):
         self._set = _set
         
+    
         
 
     def createNetwork(self, dist=1, filename=None):
@@ -40,6 +41,8 @@ class clustering:
         edgelist : set
             Set of CDR3 pairs that have an edit distance = dist.
         '''
+        
+        assert type(self._set) == set, "Method createNetwork() requires a set."
         
         # Hashing
         cdr3hash = dict()
@@ -119,6 +122,8 @@ class clustering:
 
     def calc_profile(self, sequences):
         '''
+        Calculates the profile matrix for a set of sequences (i.e. all cluster members).
+        NOTE: this version does not take into account the expected frequency of each amino acid at each position.
         '''
         assert type(sequences) == list
 
@@ -146,6 +151,9 @@ class clustering:
     
     def clustermotif(self, profile):
         '''
+        Generate consensus sequence motif from a profile matrix.
+        Square brackets [...] indicate multiple aa possibilities at that position.
+        X represents any aa.
         '''
         consensus = ''
         for col in profile.columns:
