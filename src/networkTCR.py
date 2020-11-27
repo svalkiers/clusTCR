@@ -138,7 +138,7 @@ class clustering:
         
         # Generate output as a pd.DataFrame
         colnames = ["p" + str(p) for p in range(len(sequences[0]))]        
-        profile = pd.DataFrame(profile,index=colnames).T
+        profile = pd.DataFrame(profile,index=colnames).T # indices will be columns, because the df is transposed
         
         return profile
     
