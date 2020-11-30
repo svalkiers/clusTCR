@@ -17,8 +17,7 @@ class clustering:
     
     def __init__(self, _set):
         self._set = _set
-        
-    
+            
         
 
     def createNetwork(self, dist=1, filename=None):
@@ -178,15 +177,38 @@ class metrics:
         self.nodelist = nodelist # pd.DataFrame with columns ["CDR3", "cluster"]
         self.epidata = epidata # 'ground truth', pd.DataFrame of CDR3 sequences with corresponding epitope specificity (columns=["CDR3", "Epitope"])
         
+        # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
+        self.gt = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
+        self.gt.drop_duplicates(inplace=True)
         
+        # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
+        self.gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
         
+        # Make a copy and permute cluster assignment column, this provides a baseline for comparison    
+        self.gt_baseline = self.gt.copy()
+        self.gt_baseline["cluster"] = np.random.permutation(self.gt_baseline["cluster"])
+    
+    
+    
+    def calc_confmat(self):
+        
+        # Construct confusion matrices for regular and baseline
+        self.gt["count"] = 1
+        self.gt_baseline["count"] = 1
+        conf_mat_r = pd.pivot_table(self.gt,values='count', index=self.gt["Epitope"], columns=self.gt["cluster"], aggfunc=np.sum, fill_value=0)
+        conf_mat_b = pd.pivot_table(self.gt_baseline, values='count', index=self.gt_baseline["Epitope"], columns=self.gt_baseline["cluster"], aggfunc=np.sum, fill_value=0)
+        
+        return conf_mat_r, conf_mat_b
+    
+    
+             
     def retention(self):
         '''
         Cluster retention is the fraction of sequences that has been assigned to any cluster.
         '''
         return len(self.nodelist) / len(self.epidata["CDR3"].unique())
     
-        
+    
     
     def purity(self, weighted=True):
         '''
@@ -229,4 +251,28 @@ class metrics:
             pty_base = [pty_base[n] * np.log(size_per[n]) for n in range(len(size_per))]
             pty_avg_base = sum(pty_base) / sum(np.log(size_per))            
         
-        return {"Regular":pty_avg_reg, "Baseline":pty_avg_base}
+        return {"Regular":pty_avg_reg, "Baseline":pty_avg_base}  
+    
+    
+    
+    def consistency(self, conf_mat = None):
+        '''
+        Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope
+        Returns the accuracy of the best solution
+        '''
+        
+        if conf_mat is None:
+            conf_mat = self.conf_mat
+        
+        #Define recursive function that finds the best fit for the diagonal
+        def rec_max(mat):
+            high  = mat.max().max()
+            col = mat.max().idxmax()
+            row = mat[col].idxmax()
+            
+            if(len(mat.index) > 1 and len(mat.columns) > 1):
+                high = high + rec_max(mat.drop(row,0).drop(col,1))
+            
+            return high
+        
+        return {"Regular":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}

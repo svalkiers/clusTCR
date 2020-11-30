@@ -44,20 +44,23 @@ for pair in params:
     cdr3 = set(bm["CDR3"])
     
     # Perform clustering procedure using networkTCR
+    print("Clustering...")
     Clust = clustering(cdr3)
     edges = Clust.createNetwork()
     nodes = Clust.network_clustering(edges, mcl_hyper=pair)
     
     # Calculate benchmarking metrics
+    print("Calculating clustering metrics...")
     Benchmark = metrics(nodes, bm)
     retention = Benchmark.retention()
     purity = Benchmark.purity()
-    results.append([pair[0], pair[1], retention, purity["Regular"], purity["Baseline"]])
+    consistency = Benchmark.consistency()
+    results.append([pair[0], pair[1], retention, purity["Regular"], purity["Baseline"], consistency["Regular"], consistency["Baseline"]])
     
     c += 1
     print(c)
 
 # Write output to file
-colnames = ["Inflation", "Expansion", "Retention", "Purity_r", "Purity_b"]
+colnames = ["Inflation", "Expansion", "Retention", "Purity_r", "Purity_b", "Consistency_r", "Consistency_b"]
 output = pd.DataFrame(np.array(results), columns=colnames)
 output.to_csv(bm_output, index=False, sep="\t")
