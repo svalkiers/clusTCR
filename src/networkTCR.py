@@ -16,32 +16,19 @@ import markov_clustering as mcl
 class clustering:
     
     def __init__(self, _set):
+        # Providing a set guarantees no duplicates.
         self._set = _set
-            
+        assert type(self._set) == set, "Collection of CDR3 sequences must be a set. Convert input using set()."
+        
         
 
     def createNetwork(self, dist=1, filename=None):
     
         '''
         Creates a network where nodes are represented by CDR3 sequences and edges are the edit distance (dist) between them.
-        This is a modified version of the original algorithm written by Pieter Meysman.
-        
-        Parameters
-        ----------
-        _set : set, list, array
-            Collection of CDR3 sequences.
-        dist : int; optional
-            Hamming distance between two sequences. The default is 1.
-        filename : string, optional
-            Name of outfile. The default is None.
-
-        Returns
-        -------
-        edgelist : set
-            Set of CDR3 pairs that have an edit distance = dist.
+        The algorithm finds matches by hashing the sequences. This provides accurate results for dist = 1, but is not fully
+        accurate for dist > 1.
         '''
-        
-        assert type(self._set) == set, "Method createNetwork() requires a set."
         
         # Hashing
         cdr3hash = dict()
@@ -79,14 +66,7 @@ class clustering:
         using the Markov clustering (MCL) algorithm. For more info about the inflation and expansion
         parameters, visit: https://micans.org/mcl/
         
-        Function performs multiple steps:
-        - Generate a nx network from a set of edges
-        - Run the MCL algorithm, adjust hyperparameters if necessary (mcl_hyper[inflation,expansion]).
-        - Map the cluster numbers back to the input sequences.
-        - Update network with attributes (cluster ids).
-        - Write output to file (optional).
-        
-        The output file can be visualized using dedicated network visalisation software such as CytoScape.
+        The output file can be visualized using dedicated network visalisation software such as Cytoscape.
         '''
         
         # Generate network using nx
@@ -191,8 +171,9 @@ class metrics:
     
     
     def calc_confmat(self):
-        
-        # Construct confusion matrices for regular and baseline
+        '''
+        Construct confusion matrices for true and baseline.
+        '''
         self.gt["count"] = 1
         self.gt_baseline["count"] = 1
         conf_mat_r = pd.pivot_table(self.gt,values='count', index=self.gt["Epitope"], columns=self.gt["cluster"], aggfunc=np.sum, fill_value=0)
@@ -210,59 +191,31 @@ class metrics:
     
     
     
-    def purity(self, weighted=True):
+    def purity(self, conf_mat=None):
         '''
-        Cluster purity is fraction of CDR3 sequences within a single cluster that target the same epitope.
-        This metric describes the purity of that cluster, in terms of epitope specificity.
-        
-        This function also provides a baseline estimation of cluster purity, by permuting the cluster assignment
-        column and calculating purity of the permuted data using the same procedure.
-        '''
-        
-        # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
-        self.epidata = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
-        self.epidata.drop_duplicates(inplace=True)
-        
-        # Make new column "permuted", which forms a baseline (as if the clustering was random)
-        self.nodelist["permuted"] = np.random.permutation(self.nodelist["cluster"])
-                
-        # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
-        gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
-        
-        # Calculate purity of each individual cluster and take average
-        # Regular cluster assignments
-        pty_reg = [gt[gt["cluster"]==i]["Epitope"].value_counts()[0] / len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-        pty_avg_reg = np.average(pty_reg)
-        
-        # Permuted cluster assignments
-        pty_base = [gt[gt["permuted"]==i]["Epitope"].value_counts()[0] / len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
-        pty_avg_base = np.average(pty_base)
-        
-        # Recalculate purity by weighting clusters based on their size
-        if weighted == True:
-            
-            # Regular
-            size_reg = [len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-            pty_reg = [pty_reg[n] * np.log(size_reg[n]) for n in range(len(size_reg))]
-            pty_avg_reg = sum(pty_reg) / sum(np.log(size_reg))
-            
-            # Permuted
-            size_per = [len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
-            pty_base = [pty_base[n] * np.log(size_per[n]) for n in range(len(size_per))]
-            pty_avg_base = sum(pty_base) / sum(np.log(size_per))            
-        
-        return {"Regular":pty_avg_reg, "Baseline":pty_avg_base}  
-    
-    
-    
-    def consistency(self, conf_mat = None):
-        '''
-        Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope
-        Returns the accuracy of the best solution
+        Method that estimates the precision of the solution.
+        We assigned each cluster to the most common epitope.
+        All other epitopes in the same cluster are considered false positives.
         '''
         
         if conf_mat is None:
-            conf_mat = self.conf_mat
+            conf_mat = self.calc_confmat()
+        
+        hits_t = np.sum(conf_mat[0].apply(np.max,axis=0))
+        hits_b = np.sum(conf_mat[1].apply(np.max,axis=0))
+        
+        return {"True":hits_t/np.sum(conf_mat[0].values,axis=None), "Baseline":hits_b/np.sum(conf_mat[1].values,axis=None)}
+    
+    
+    
+    def consistency(self, conf_mat=None):
+        '''
+        Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope.
+        Returns the accuracy of the best solution.
+        '''
+        
+        if conf_mat is None:
+            conf_mat = self.calc_confmat()
         
         #Define recursive function that finds the best fit for the diagonal
         def rec_max(mat):
@@ -275,4 +228,4 @@ class metrics:
             
             return high
         
-        return {"Regular":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}
+        return {"True":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}
