@@ -11,38 +11,30 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from matplotlib import cm
+
+# Adjust these variables if other metrics/datasets are available
 metrics = ["Purity", "Consistency"]
 datasets = ["VDJdb", "Dash"]
 
 for dataset in datasets:
     
-    # Infile
+    # Prepare data for plotting
     infile = "../results/bm_metrics_" + dataset + ".tsv"
-    
-    # Read infile and create df per Expansion param value
     df = pd.read_csv(infile, sep="\t")
-    df_2 = df[df["Expansion"]==2]
-    df_3 = df[df["Expansion"]==3]
-    df_4 = df[df["Expansion"]==4]
-    df_5 = df[df["Expansion"]==5]
-
-    for metric in metrics:
+    hyperparameters = df["Expansion"].unique()
+    colors = cm.get_cmap('viridis', len(hyperparameters))
     
+    for metric in metrics:
+        
+        # Make new plot for every metric
         fig, ax = plt.subplots(figsize=[12,8])
         
-        # Regular
-        ax.plot(df_2["Inflation"], df_2[metric + "_r"], c="b", label="Expansion = 2")
-        ax.plot(df_3["Inflation"], df_3[metric + "_r"], c="r", label="Expansion = 3")
-        ax.plot(df_4["Inflation"], df_4[metric + "_r"], c="g", label="Expansion = 4")
-        ax.plot(df_5["Inflation"], df_5[metric + "_r"], c="y", label="Expansion = 5")
-        
-        # Baseline
-        ax.plot(df_2["Inflation"], df_2[metric + "_b"], "--", c="b", label="Baseline, Expansion = 2")
-        ax.plot(df_3["Inflation"], df_3[metric + "_b"], "--", c="r", label="Baseline, Expansion = 3")
-        ax.plot(df_4["Inflation"], df_4[metric + "_b"], "--", c="g", label="Baseline, Expansion = 4")
-        ax.plot(df_5["Inflation"], df_5[metric + "_b"], "--", c="y", label="Baseline, Expansion = 5")
-        
-        # Aesthetics
+        for hp, col in zip(hyperparameters, colors.colors):
+            df_hp = df[df["Expansion"]==int(hp)]
+            ax.plot(df_hp["Inflation"], df_hp[metric + "_r"], c=col, label="True. Expansion = " + str(int(hp))) # True
+            ax.plot(df_hp["Inflation"], df_hp[metric + "_b"], c=col, label="Base. Expansion = " + str(int(hp)), linestyle="dotted") # Baseline
+            
         ax.set_ylabel(metric, fontsize=16)
         ax.set_xlabel("Inflation", fontsize=16)
         ax.set_title("MCL hyperparameters versus " + metric.lower() + " - " + dataset, fontsize=18)
