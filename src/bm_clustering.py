@@ -13,18 +13,20 @@ import numpy as np
 from networkTCR import clustering
 from networkTCR import metrics
 
-bm_file = "../data/vdjdb_trb.tsv" # input
-bm_output = "../results/bm_metrics.tsv" # output
+bm_file = "../data/dash.tsv" # input
+bm_output = "../results/bm_metrics_dash.tsv" # output
 
-def read_vdjdb(vdjdb_file, q_score = 0):
+def read_bm_file(file, q_score = None):
     '''
-    Reads vdjdb file, keep CDR3 and epitope columns, return entries
+    Reads benchmark file, keep CDR3 and epitope columns, return entries
     that satisfy the predefined q-score and corresponding CDR3 sequences
+    if using VDJdb.
     '''        
-    vdjdb = pd.read_csv(vdjdb_file, sep="\t")
-    vdjdb = vdjdb[vdjdb["Score"]>=q_score]
+    bm = pd.read_csv(file, sep="\t")
+    if q_score is not None:
+        bm = bm[bm["Score"]>=q_score]
     
-    return vdjdb[["CDR3", "Epitope"]]
+    return bm[["CDR3", "Epitope"]]
 
 # Generate list of hyperparameter pairs to test
 params = []
@@ -40,7 +42,7 @@ c = 0
 for pair in params:
 
     # Read input file
-    bm = read_vdjdb(bm_file)
+    bm = read_bm_file(bm_file)
     cdr3 = set(bm["CDR3"])
     
     # Perform clustering procedure using networkTCR
@@ -54,7 +56,8 @@ for pair in params:
     Benchmark = metrics(nodes, bm)
     retention = Benchmark.retention()
     purity = Benchmark.purity()
-    consistency = Benchmark.consistency()
+    cm = Benchmark.calc_confmat()
+    consistency = Benchmark.consistency(cm)
     results.append([pair[0], pair[1], retention, purity["Regular"], purity["Baseline"], consistency["Regular"], consistency["Baseline"]])
     
     c += 1
