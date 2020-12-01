@@ -16,32 +16,19 @@ import markov_clustering as mcl
 class clustering:
     
     def __init__(self, _set):
+        # Providing a set guarantees no duplicates.
         self._set = _set
-            
+        assert type(self._set) == set, "Collection of CDR3 sequences must be a set. Convert input using set()."
+        
         
 
     def createNetwork(self, dist=1, filename=None):
     
         '''
         Creates a network where nodes are represented by CDR3 sequences and edges are the edit distance (dist) between them.
-        This is a modified version of the original algorithm written by Pieter Meysman.
-        
-        Parameters
-        ----------
-        _set : set, list, array
-            Collection of CDR3 sequences.
-        dist : int; optional
-            Hamming distance between two sequences. The default is 1.
-        filename : string, optional
-            Name of outfile. The default is None.
-
-        Returns
-        -------
-        edgelist : set
-            Set of CDR3 pairs that have an edit distance = dist.
+        The algorithm finds matches by hashing the sequences. This provides accurate results for dist = 1, but is not fully
+        accurate for dist > 1.
         '''
-        
-        assert type(self._set) == set, "Method createNetwork() requires a set."
         
         # Hashing
         cdr3hash = dict()
@@ -79,14 +66,7 @@ class clustering:
         using the Markov clustering (MCL) algorithm. For more info about the inflation and expansion
         parameters, visit: https://micans.org/mcl/
         
-        Function performs multiple steps:
-        - Generate a nx network from a set of edges
-        - Run the MCL algorithm, adjust hyperparameters if necessary (mcl_hyper[inflation,expansion]).
-        - Map the cluster numbers back to the input sequences.
-        - Update network with attributes (cluster ids).
-        - Write output to file (optional).
-        
-        The output file can be visualized using dedicated network visalisation software such as CytoScape.
+        The output file can be visualized using dedicated network visalisation software such as Cytoscape.
         '''
         
         # Generate network using nx
@@ -191,8 +171,9 @@ class metrics:
     
     
     def calc_confmat(self):
-        
-        # Construct confusion matrices for regular and baseline
+        '''
+        Construct confusion matrices for true and baseline.
+        '''
         self.gt["count"] = 1
         self.gt_baseline["count"] = 1
         conf_mat_r = pd.pivot_table(self.gt,values='count', index=self.gt["Epitope"], columns=self.gt["cluster"], aggfunc=np.sum, fill_value=0)
