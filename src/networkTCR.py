@@ -210,59 +210,31 @@ class metrics:
     
     
     
-    def purity(self, weighted=True):
+    def purity(self, conf_mat=None):
         '''
-        Cluster purity is fraction of CDR3 sequences within a single cluster that target the same epitope.
-        This metric describes the purity of that cluster, in terms of epitope specificity.
-        
-        This function also provides a baseline estimation of cluster purity, by permuting the cluster assignment
-        column and calculating purity of the permuted data using the same procedure.
-        '''
-        
-        # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
-        self.epidata = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
-        self.epidata.drop_duplicates(inplace=True)
-        
-        # Make new column "permuted", which forms a baseline (as if the clustering was random)
-        self.nodelist["permuted"] = np.random.permutation(self.nodelist["cluster"])
-                
-        # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
-        gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
-        
-        # Calculate purity of each individual cluster and take average
-        # Regular cluster assignments
-        pty_reg = [gt[gt["cluster"]==i]["Epitope"].value_counts()[0] / len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-        pty_avg_reg = np.average(pty_reg)
-        
-        # Permuted cluster assignments
-        pty_base = [gt[gt["permuted"]==i]["Epitope"].value_counts()[0] / len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
-        pty_avg_base = np.average(pty_base)
-        
-        # Recalculate purity by weighting clusters based on their size
-        if weighted == True:
-            
-            # Regular
-            size_reg = [len(gt[gt["cluster"]==i]["CDR3"].unique()) for i in sorted(gt["cluster"].unique())]
-            pty_reg = [pty_reg[n] * np.log(size_reg[n]) for n in range(len(size_reg))]
-            pty_avg_reg = sum(pty_reg) / sum(np.log(size_reg))
-            
-            # Permuted
-            size_per = [len(gt[gt["permuted"]==i]["CDR3"].unique()) for i in sorted(gt["permuted"].unique())]
-            pty_base = [pty_base[n] * np.log(size_per[n]) for n in range(len(size_per))]
-            pty_avg_base = sum(pty_base) / sum(np.log(size_per))            
-        
-        return {"Regular":pty_avg_reg, "Baseline":pty_avg_base}  
-    
-    
-    
-    def consistency(self, conf_mat = None):
-        '''
-        Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope
-        Returns the accuracy of the best solution
+        Method that estimates the precision of the solution.
+        We assigned each cluster to the most common epitope.
+        All other epitopes in the same cluster are considered false positives.
         '''
         
         if conf_mat is None:
-            conf_mat = self.conf_mat
+            conf_mat = self.calc_confmat()
+        
+        hits_t = np.sum(conf_mat[0].apply(np.max,axis=0))
+        hits_b = np.sum(conf_mat[1].apply(np.max,axis=0))
+        
+        return {"True":hits_t/np.sum(conf_mat[0].values,axis=None), "Baseline":hits_b/np.sum(conf_mat[1].values,axis=None)}
+    
+    
+    
+    def consistency(self, conf_mat=None):
+        '''
+        Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope.
+        Returns the accuracy of the best solution.
+        '''
+        
+        if conf_mat is None:
+            conf_mat = self.calc_confmat()
         
         #Define recursive function that finds the best fit for the diagonal
         def rec_max(mat):
@@ -275,4 +247,4 @@ class metrics:
             
             return high
         
-        return {"Regular":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}
+        return {"True":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}
