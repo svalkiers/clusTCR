@@ -150,6 +150,67 @@ class clustering:
         return consensus
     
     
+    
+    def calc_variation(self, nodes, correction="log"):
+        '''
+        Correction factors:
+            - log: 1/log2(n) correction (better for smaller clusters)
+            - ssc: small-sample correction (typically used in motif logo construction)
+        '''
+        
+        # Correction factors
+        
+        cfactors = ["log", "ssc"]
+        assert correction in cfactors, "Unknown correction factor '{}', please choose one of the following: {}.".format(correction, cfactors)
+        
+        # Results
+        res = {"ic":[], "size":[]}
+        
+        # Calculate average information content per amino acid position in cluster
+        for clust in nodes["cluster"].unique():
+            
+            sequences = nodes[nodes["cluster"]==clust]["CDR3"].tolist() # sequences of one cluster
+            n = len(sequences) # size of cluster
+            l = len(sequences[0][1:-1]) # CDR3 length (ignoring pos 1 and -1)
+            ic = [] # information content
+            en = (1/np.log(2))*((20-1)/(2*n)) # small-sample correction
+            
+            # Make sure to proceed only if all sequences in the cluster have equal length
+            if all(len(seq) == len(sequences[0]) for seq in sequences) is False:
+                
+                # On the rare occasion that a cluster contains sequences of inequal length.
+                # Typically, there is/are only one (or very few) sequence(s) that differ from the avg. CDR3 length in the cluster.
+                # Therefore, we use the length of the highest proportion of sequences as the standard, and delete all others.
+                s = []
+                for i in sequences:
+                    s.append(len(i))
+                k = pd.Series(s).value_counts().index[0] # Standard cluster length
+                for j in sequences:
+                    if len(j) != k:
+                        del sequences[sequences.index(j)] # Delete all sequences that differ from k in length.
+            
+            else:
+                
+                for pos in range(1,l+1): # iterate over position 1 to -1 (leaving out first C and last F)
+                    ic_aa_pos = [] # initiate variable to carry information content per position
+                    psc = [seq[pos] for seq in sequences] # get first AA of each sequence at position "pos
+                    
+                    for aa in pd.Series(psc).value_counts():
+                        e = (aa/n)*(np.log2(aa/n)) # individual terms of Shannon entropy
+                        ic_aa_pos.append(e)
+                        
+                    information_content = -sum(ic_aa_pos)
+                    if correction == "log":
+                        ic.append(information_content / np.log2(n))
+                    elif correction == "ssc":
+                        ic.append(np.log2(20) - (information_content + en))                        
+                    
+            res["ic"].append(np.average(ic))
+            res["size"].append(n)
+        
+        return pd.DataFrame(res)
+    
+    
 
 class metrics:
     # NOTE: You can only calculate these cluster metrics if the CDR3 sequences are labelled (i.e. epitope specificity is known)!
