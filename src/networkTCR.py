@@ -12,8 +12,11 @@ import pandas as pd
 import networkx as nx
 import markov_clustering as mcl
 
+import olga.load_model as load_model
+import olga.generation_probability as pgen
 
-class clustering:
+
+class Clustering:
     
     def __init__(self, _set):
         # Providing a set guarantees no duplicates.
@@ -150,8 +153,15 @@ class clustering:
         return consensus
     
     
-    
-    def calc_variation(self, nodes, correction="log"):
+
+class Features:
+    # Calculate features for clusters
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+
+
+    def calc_variation(self, correction="log"):
         '''
         Correction factors:
             - log: 1/log2(n) correction (better for smaller clusters)
@@ -163,12 +173,12 @@ class clustering:
         assert correction in cfactors, "Unknown correction factor '{}', please choose one of the following: {}.".format(correction, cfactors)
         
         # Results
-        res = {"ic":[], "size":[]}
+        res = {"ic":[], "size":[], "length":[]}
         
         # Calculate average information content per amino acid position in cluster
-        for clust in nodes["cluster"].unique():
+        for clust in self.nodes["cluster"].unique():
             
-            sequences = nodes[nodes["cluster"]==clust]["CDR3"].tolist() # sequences of one cluster
+            sequences = self.nodes[self.nodes["cluster"]==clust]["CDR3"].tolist() # sequences of one cluster
             n = len(sequences) # size of cluster
             l = len(sequences[0][1:-1]) # CDR3 length (ignoring pos 1 and -1)
             ic = [] # information content
@@ -206,12 +216,13 @@ class clustering:
                     
             res["ic"].append(np.average(ic))
             res["size"].append(n)
+            res["length"].append(l)
         
         return pd.DataFrame(res)
+
+
     
-    
-    
-    def calc_physchem(self, nodes):
+    def calc_physchem(self):
         '''
         Calculate the average physicochemical properties for a CDR3 amino acid sequence.
         Takes a nodelist as input. This can be calculated with the network_clustering() function.
@@ -253,14 +264,59 @@ class clustering:
                                'mutation stability': mutation_stability}
 
         properties = []
-        for seq in nodes["CDR3"]:
+        for seq in self.nodes["CDR3"]:
             properties.append([np.average([physchem_properties[prop][aa] for aa in seq]) for prop in physchem_properties])
+        self.nodes[list(physchem_properties.keys())] = properties
         
-        return pd.DataFrame(properties, columns=[list(physchem_properties.keys())])
+        return pd.DataFrame([self.nodes.groupby("cluster")[prop].mean() for prop in physchem_properties]).T
+    
+    
+    
+    def calc_pgen(self):
+        '''
+        NOTE: this method requires the Python 3 fork of OLGA (https://github.com/dhmay/OLGA)!
+        By default, OLGA is installed within this repo.
+        '''
+        
+        while True:
+            
+            print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
+            user_input = input("Confirm: [Y/N] ")
+            
+            if user_input.lower() in ("y", "yes"):
+                continue
+            elif user_input.lower() in ("n", "no"):
+                break
+            else:
+                print(f"Error: Input '{user_input}' unrecognised.")
+                break
+        
+            params_file_name = 'olga/default_models/human_T_beta/model_params.txt'
+            marginals_file_name = 'olga/default_models/human_T_beta/model_marginals.txt'
+            V_anchor_pos_file ='olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
+            J_anchor_pos_file = 'olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
+            
+            genomic_data = load_model.GenomicDataVDJ()
+            genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
+            
+            generative_model = load_model.GenerativeModelVDJ()
+            generative_model.load_and_process_igor_model(marginals_file_name)
+            
+            pgen_model = pgen.GenerationProbabilityVDJ(generative_model, genomic_data)
+            
+            p = [pgen_model.compute_aa_CDR3_pgen(seq) for seq in self.nodes["CDR3"]]
+            self.nodes["pgen"] = p
+            
+            return self.nodes.groupby("cluster")["pgen"].mean()
+        
+    
+    
+    def combine(self, *args):
+        return pd.concat([*args], axis=1)
     
     
 
-class metrics:
+class Metrics:
     # NOTE: You can only calculate these cluster metrics if the CDR3 sequences are labelled (i.e. epitope specificity is known)!
     def __init__(self, nodelist, epidata):
         self.nodelist = nodelist # pd.DataFrame with columns ["CDR3", "cluster"]
