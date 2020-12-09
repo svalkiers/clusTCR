@@ -9,12 +9,12 @@ Contact: sebastiaan.valkiers@uantwerpen.be
 
 import pandas as pd
 import numpy as np
+import time
 
-from networkTCR import clustering
-from networkTCR import metrics
+from networkTCR import Clustering, Metrics
 
-bm_file = "../data/dash.tsv" # input
-bm_output = "../results/bm_metrics_dash.tsv" # output
+bm_file = "../data/vdjdb_trb.tsv" # input
+bm_output = "../results/bm_metrics_t_estimate.tsv" # output
 
 def read_bm_file(file, q_score = None):
     '''
@@ -28,10 +28,14 @@ def read_bm_file(file, q_score = None):
     
     return bm[["CDR3", "Epitope"]]
 
+# Read input file
+bm = read_bm_file(bm_file)
+cdr3 = set(bm["CDR3"])
+
 # Generate list of hyperparameter pairs to test
 params = []
-param_1 = np.round(np.arange(1.1,3.1,0.1),1)
-param_2 = np.round(np.arange(2,6,1),0)
+param_1 = [1.2] 
+param_2 = np.round(np.arange(2,10,1),0)
 for i in param_1:
     for j in param_2:
         params.append([i, j])
@@ -40,30 +44,29 @@ for i in param_1:
 results = []
 c = 0
 for pair in params:
-
-    # Read input file
-    bm = read_bm_file(bm_file)
-    cdr3 = set(bm["CDR3"])
     
+    t0 = time.time()
     # Perform clustering procedure using networkTCR
     print("Clustering...")
-    Clust = clustering(cdr3)
+    Clust = Clustering(cdr3)
     edges = Clust.createNetwork()
     nodes = Clust.network_clustering(edges, mcl_hyper=pair)
+    t1 = time.time()
     
     # Calculate benchmarking metrics
     print("Calculating clustering metrics...")
-    Benchmark = metrics(nodes, bm)
+    Benchmark = Metrics(nodes, bm)
     retention = Benchmark.retention()
     purity = Benchmark.purity()
     cm = Benchmark.calc_confmat()
     consistency = Benchmark.consistency(cm)
-    results.append([pair[0], pair[1], retention, purity["Regular"], purity["Baseline"], consistency["Regular"], consistency["Baseline"]])
+    t = t1 - t0
+    results.append([t, pair[0], pair[1], retention, purity["True"], purity["Baseline"], consistency["True"], consistency["Baseline"]])
     
     c += 1
     print(c)
 
 # Write output to file
-colnames = ["Inflation", "Expansion", "Retention", "Purity_r", "Purity_b", "Consistency_r", "Consistency_b"]
+colnames = ["time", "Inflation", "Expansion", "Retention", "Purity_t", "Purity_b", "Consistency_t", "Consistency_b"]
 output = pd.DataFrame(np.array(results), columns=colnames)
 output.to_csv(bm_output, index=False, sep="\t")

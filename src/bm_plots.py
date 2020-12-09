@@ -43,6 +43,7 @@ for dataset in datasets:
 
 # Summary plot comparing different q-score cutoffs (VDJdb)
 summ = pd.read_csv("../results/summary_VDJdb.tsv", sep="\t")
+summ = summ[summ["d"]==1]
 
 fig, axs = plt.subplots(2, 2, figsize=[12,8])
 
@@ -63,20 +64,20 @@ axs[0,1].set_xlabel("VDJdb q-score", fontsize=14)
 axs[0,1].set_ylabel("Retention", fontsize=14)
 
 # Purity
-axs[1,0].bar(x - width/2, height=summ["purity_r"], width=width, tick_label=labels, label="True")
-axs[1,0].bar(x + width/2, height=summ["purity_b"], width=width, tick_label=labels, label="Baseline")
+axs[1,0].bar(x - width/2, height=summ["purity_T"], width=width, tick_label=labels, label="True")
+axs[1,0].bar(x + width/2, height=summ["purity_B"], width=width, tick_label=labels, label="Base")
 axs[1,0].set_title("Purity", fontsize=18)
 axs[1,0].set_xlabel("VDJdb q-score", fontsize=14)
 axs[1,0].set_ylabel("Purity", fontsize=14)
 axs[1,0].legend()
 
 # Consistency
-axs[1,1].bar(x - width/2, height=summ["consistency_r"], width=width, tick_label=labels, label="True")
-axs[1,1].bar(x + width/2, height=summ["consistency_b"], width=width, tick_label=labels, label="Baseline")
+axs[1,1].bar(x - width/2, height=summ["consistency_T"], width=width, tick_label=labels, label="True")
+axs[1,1].bar(x + width/2, height=summ["consistency_B"], width=width, tick_label=labels, label="Base")
 axs[1,1].set_title("Consistency", fontsize=18)
 axs[1,1].set_xlabel("VDJdb q-score", fontsize=14)
 axs[1,1].set_ylabel("Consistency", fontsize=14)
 axs[1,1].legend()
 
-fig.suptitle("CDR3 clustering summary - VDJdb", fontsize=30)
+fig.suptitle("CDR3 clustering - q-score - VDJdb", fontsize=30)
 fig.tight_layout()

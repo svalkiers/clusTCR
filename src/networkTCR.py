@@ -16,6 +16,23 @@ import olga.load_model as load_model
 import olga.generation_probability as pgen
 
 
+class Dataloader:
+    # infile variable should provide the path to the benchmarking file (e.g. VDJdb)
+    def __init__(self, infile):
+        self.infile = infile
+        
+        
+        
+    def read_bm_file(self, q=None):
+        # NOTE: q-score is only used for VDJdb data.
+        bm = pd.read_csv(self.infile, sep="\t")
+        if q is not None:
+            bm = bm[bm["Score"]>=q]
+        
+        return bm[["CDR3", "Epitope"]].reset_index(drop=True)
+
+
+
 class Clustering:
     
     def __init__(self, _set):
@@ -25,7 +42,7 @@ class Clustering:
         
         
 
-    def createNetwork(self, dist=1, filename=None):
+    def create_network(self, dist=1, filename=None):
     
         '''
         Creates a network where nodes are represented by CDR3 sequences and edges are the edit distance (dist) between them.
@@ -268,7 +285,13 @@ class Features:
             properties.append([np.average([physchem_properties[prop][aa] for aa in seq]) for prop in physchem_properties])
         self.nodes[list(physchem_properties.keys())] = properties
         
-        return pd.DataFrame([self.nodes.groupby("cluster")[prop].mean() for prop in physchem_properties]).T
+        cols_1 = [prop + "_avg" for prop in list(physchem_properties.keys())]
+        cols_2 = [prop + "_var" for prop in list(physchem_properties.keys())]
+        physchemprop = pd.concat([pd.DataFrame([self.nodes.groupby("cluster")[prop].mean() for prop in physchem_properties], index=cols_1).T,
+                                  pd.DataFrame([self.nodes.groupby("cluster")[prop].mean() for prop in physchem_properties], index=cols_2).T],
+                                 axis= 1)
+        
+        return physchemprop 
     
     
     
@@ -278,19 +301,12 @@ class Features:
         By default, OLGA is installed within this repo.
         '''
         
-        while True:
             
-            print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
-            user_input = input("Confirm: [Y/N] ")
-            
-            if user_input.lower() in ("y", "yes"):
-                continue
-            elif user_input.lower() in ("n", "no"):
-                break
-            else:
-                print(f"Error: Input '{user_input}' unrecognised.")
-                break
+        print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
+        user_input = input("Confirm: [Y/N] ")
         
+        if user_input.lower() in ("y", "yes"):
+            
             params_file_name = 'olga/default_models/human_T_beta/model_params.txt'
             marginals_file_name = 'olga/default_models/human_T_beta/model_marginals.txt'
             V_anchor_pos_file ='olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
@@ -307,7 +323,18 @@ class Features:
             p = [pgen_model.compute_aa_CDR3_pgen(seq) for seq in self.nodes["CDR3"]]
             self.nodes["pgen"] = p
             
-            return self.nodes.groupby("cluster")["pgen"].mean()
+            pgenvals = pd.concat([self.nodes.groupby("cluster")["pgen"].mean().rename("pgen_avg"),
+                                  self.nodes.groupby("cluster")["pgen"].var().rename("pgen_var")],
+                                 axis=1)
+            
+            return pgenvals
+            
+        elif user_input.lower() in ("n", "no"):
+            return None
+        else:
+            print(f"Error: Unrecognised input '{user_input}'.")
+            return None
+        
         
     
     
