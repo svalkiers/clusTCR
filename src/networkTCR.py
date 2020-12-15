@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 23 15:19:50 2020
+author: Sebastiaan Valkiers
 
-@author: Sebastiaan Valkiers
-
-Contact: sebastiaan.valkiers@uantwerpen.be
+networkTCR is a CDR3 network clustering method that utilizes the MCL algorithm.
 """
 
 import numpy as np
@@ -368,10 +366,19 @@ class Metrics:
         '''
         self.gt["count"] = 1
         self.gt_baseline["count"] = 1
-        conf_mat_r = pd.pivot_table(self.gt,values='count', index=self.gt["Epitope"], columns=self.gt["cluster"], aggfunc=np.sum, fill_value=0)
-        conf_mat_b = pd.pivot_table(self.gt_baseline, values='count', index=self.gt_baseline["Epitope"], columns=self.gt_baseline["cluster"], aggfunc=np.sum, fill_value=0)
+        conf_mat_t = pd.pivot_table(self.gt,values='count',
+                                    index=self.gt["Epitope"],
+                                    columns=self.gt["cluster"],
+                                    aggfunc=np.sum,
+                                    fill_value=0)
+        conf_mat_b = pd.pivot_table(self.gt_baseline,
+                                    values='count',
+                                    index=self.gt_baseline["Epitope"],
+                                    columns=self.gt_baseline["cluster"],
+                                    aggfunc=np.sum,
+                                    fill_value=0)
         
-        return conf_mat_r, conf_mat_b
+        return conf_mat_t, conf_mat_b
     
     
              
