@@ -31,9 +31,17 @@ class ClusterAnalysis:
             # If no permuted labels are available, permute the existing labels
             # Note that this permutation is not equal to the original one
             self.permuted = np.random.permutation(self.actual)
+            
+            
 
     def plot_purity_distribution(self, n_bins = 20, labels = ["Actual", "Permuted"]):
+        '''
+        Plot the distribution of cluster purities for actual and permuted clusters.
         
+        n_bins : histogram bins
+        labels : labels of the distributions
+        '''
+    
         data = np.column_stack([self.actual, self.permuted])
             
         fig, ax = plt.subplots(figsize=(12,8))
@@ -45,45 +53,72 @@ class ClusterAnalysis:
         ax.set_xlabel("Purity", fontsize=12)
         ax.legend(prop={'size': 14})
         plt.show()
+        
+        
     
     def discretize_labels(self, c = .8):
+        '''
+        Generate binary labels from cluster purities. These labels represent:
+            - 1 ~ GOOD PURITY
+            - 0 ~ BAD PURITY
+        
+        c : value that defines the cutoff between good and bad purity.
+        '''
     
         for a, b in zip(enumerate(self.actual), enumerate(self.permuted)):
+            # Actual clusters
             if a[1] >= c:
-                self.actual[a[0]] = 1
+                self.actual[a[0]] = 1 # Good
             else:
-                self.actual[a[0]] = 0
+                self.actual[a[0]] = 0 # Bad
+            # Permuted clusters
             if b[1] >= c:
-                self.permuted[b[0]] = 1
+                self.permuted[b[0]] = 1 # Good
             else:
-                self.permuted[b[0]] = 0
+                self.permuted[b[0]] = 0 # Bad
                 
         return self.actual, self.permuted
     
-    def prep_data(self, s = 2):
+    
+    
+    def prep_data(self, s = 3):
+        '''
+        Prepare data for machine learning purposes.
         
-        y = np.array([self.actual, self.permuted]).T
+        s : minimum cluster size
+        '''
         
-        d = np.append(self.X, y, axis = 1)
-        
-        d = d[d[:,1]>s] # Filter on cluster size
+        y = np.array([self.actual, self.permuted]).T # Actual and permuted purities
+        d = np.append(self.X, y, axis = 1) # Append targets to features
+        d = d[d[:,1]>=s] # Filter on cluster size
         d = d[~np.isnan(d).any(axis=1)] # Remove nan values from array
     
-        self.X = d[:,:-2]
-        self.X = StandardScaler().fit_transform(self.X)
+        self.X = d[:,:-2] # Isolate features
+        self.X = StandardScaler().fit_transform(self.X) # Scale features
         
-        self.actual = np.array(d[:,-2])
-        self.permuted = np.array(d[:,-1])
+        self.actual = np.array(d[:,-2]) # Actual purities
+        self.permuted = np.array(d[:,-1]) # Permuted purities
         
         return self.X, self.actual, self.permuted
     
+    
+    
     def cluster_quality_classifier(self, n_folds = 10, feat_importances = True):
+        '''
+        Classification model that predicts the quality of a cluster (as defined by purity)
+        based on a number of cluster features.
         
+        n_folds : number of cross-validation folds (default = 10)
+        feat_importances : visualize barplot with feature importances (default = True)
+        '''
+        
+        # Define CV and RF model
         cv = StratifiedKFold(n_splits=n_folds)
         classifier = RandomForestClassifier(n_estimators=100, max_leaf_nodes=1000, criterion='entropy', 
                                             min_samples_leaf=3, min_samples_split=3, bootstrap=False, 
                                             max_depth=100, max_features='sqrt', n_jobs=-1)
         
+        # Evaluate classifier (actual purities)
         tprs = []
         aucs = []
         mean_fpr = np.linspace(0, 1, 100)
@@ -103,6 +138,7 @@ class ClusterAnalysis:
         mean_auc = auc(mean_fpr, mean_tpr)
         std_auc = np.std(aucs)
         
+        # Plot ROC curve
         ax.plot(mean_fpr, mean_tpr, color='royalblue',
                 label=r'Actual (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
                 lw=6, alpha=0.8)
@@ -114,6 +150,7 @@ class ClusterAnalysis:
                         label=r'$\pm$ 1 std. dev.')
         
         
+        # Evaluate classifier (permuted purities)
         tprs = []
         aucs = []
         mean_fpr = np.linspace(0, 1, 100)
@@ -142,6 +179,7 @@ class ClusterAnalysis:
         ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='indianred', alpha=.2,
                         label=r'$\pm$ 1 std. dev.')
         
+        # Figure aesthetics
         ax.set(xlim=[0, 1], ylim=[0, 1])
         ax.set_title("Receiver operating characteristic", fontsize=26)
         ax.set_xlabel("False Positive Rate", fontsize=20)
@@ -159,7 +197,7 @@ class ClusterAnalysis:
         plt.show()
         
         if feat_importances is True:
-            
+            # Refit model on features and actual labels
             classifier.fit(self.X[train], self.actual[train])
             
             df = pd.DataFrame({"feature":self.feature_names, 
@@ -179,6 +217,12 @@ class ClusterAnalysis:
     
     
     def cluster_quality_regressor(self, feat_importances = True):
+        '''
+        Regression model that predicts the quality of a cluster (as defined by purity)
+        based on a number of cluster features.
+        
+        feat_importances : visualize barplot with feature importances (default = True)
+        '''
         
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.actual, test_size=.2)
         
@@ -213,6 +257,11 @@ class ClusterAnalysis:
     
     
     def perform_PCA(self, n_comp = 5):
+        '''
+        Perform principal component analysis using cluster features.
+        
+        n_comp : number of principal components (default = 5)
+        '''
         
         pca = PCA(n_components = n_comp)
         x_new = pca.fit_transform(self.X)
