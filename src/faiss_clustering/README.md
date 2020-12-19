@@ -37,6 +37,15 @@ The same function can be used to process multiple files, where they are added to
 cdr3 = process_csv(['filename1.csv', 'filename2.csv'], 'cdr3')
 ```
 
+#### Separator
+
+If the separator is not a comma, don't forget to provide it
+
+```python
+cdr3 = process_csv('filename.csv', 'cdr3', sep='\t')
+```
+
+
 ### Datasets with epitopes
 
 When epitopes are also present in a dataset, we simply provide the column name and the function will return the epitopes as a series as well

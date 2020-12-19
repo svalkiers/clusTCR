@@ -11,7 +11,7 @@ class FaissClustering:
     @staticmethod
     def cluster(data: pd.Series,
                 properties: list = OPTIMAL,
-                items_per_cluster=10,
+                avg_items_per_cluster=10,
                 vector_mapping_func=None,
                 add_average=False,
                 add_length=False):
@@ -22,7 +22,7 @@ class FaissClustering:
         properties: to be used during the clustering can be given in a list, and are available to import as
                         'from faiss_clustering.properties import *'
 
-        items_per_cluster: the average size of the clusters that will be generated
+        avg_items_per_cluster: the average size of the clusters that will be generated
 
         vector_mapping_func: function that takes a profile (a list of float values representing the sequence)
                                 and returns a list with the same size
@@ -35,7 +35,7 @@ class FaissClustering:
                                  add_average=add_average,
                                  add_length=add_length)
         clustering = cluster_with_faiss(profiles,
-                                        items_per_cluster=items_per_cluster,
+                                        items_per_cluster=avg_items_per_cluster,
                                         ids=data.keys().to_numpy())
         return FaissClustering(clustering, data)
 
