@@ -1,8 +1,5 @@
-from .io.output import get_cluster_contents
-
-
-def calculate_purity(index, epitopes, n):
-    contents = get_cluster_contents(index)
+def calculate_purity(clustering, epitopes, n):
+    contents = clustering.get_cluster_contents()
     purity_amount = 0
     for cluster in contents:
         if len(cluster) <= 1:
@@ -17,16 +14,16 @@ def calculate_single_cluster_purity(cluster, epitopes):
     return max(epitope_counts(cluster, epitopes).values()) / len(cluster)
 
 
-def calculate_consistency(index, epitopes, n):
-    contents = get_cluster_contents(index)
+def calculate_consistency(clustering, epitopes, n):
+    contents = clustering.get_cluster_contents()
     tuples = make_epitope_tuples(contents, epitopes)
     assignments = assign_true_clusters(tuples)
     tcrs_in_true_clusters = sum(assignments.values())
     return tcrs_in_true_clusters / n
 
 
-def calculate_retention(index, epitopes, n):
-    contents = get_cluster_contents(index)
+def calculate_retention(clustering, epitopes, n):
+    contents = clustering.get_cluster_contents()
     count = 0
     for cluster in contents:
         cluster_size = len(cluster)
