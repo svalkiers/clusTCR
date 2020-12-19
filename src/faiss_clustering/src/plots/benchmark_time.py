@@ -1,8 +1,8 @@
 import timeit
 from functools import partial
-from src.cluster import profile_cluster, PROPERTY_COMBINATIONS
-from src.io.datasets import covid19_repertoire
-from src.io.output import path_in_results
+from ..cluster import profile_cluster, PROPERTY_COMBINATIONS
+from ..io.datasets import covid19_repertoire
+from ..io.output import path_in_results
 
 
 REPEAT = 1

@@ -1,5 +1,5 @@
-from src.cluster import *
-from src.io.output import get_cluster_contents
+from ..cluster import *
+from ..io.output import get_cluster_contents
 import matplotlib.pyplot as plt
 
 

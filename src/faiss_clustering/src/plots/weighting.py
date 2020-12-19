@@ -1,6 +1,6 @@
-from src.evaluate import calculate_purity
-from src.cluster import *
-from src.io.datasets import vdj
+from ..evaluate import calculate_purity
+from ..cluster import *
+from ..io.datasets import vdj
 import matplotlib.pyplot as plt
 
 

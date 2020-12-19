@@ -1,4 +1,4 @@
-from src.io.output import get_cluster_contents
+from .io.output import get_cluster_contents
 
 
 def calculate_purity(index, epitopes, n):

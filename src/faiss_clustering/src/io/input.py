@@ -2,9 +2,10 @@ from pandas import read_csv, concat, Series
 import os
 from typing import Union
 import re
+from os.path import dirname
 
 MATCHER = re.compile('[A-Z]*')
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = dirname(dirname(dirname(os.path.abspath(__file__))))
 DATA = os.path.join(ROOT, 'data')
 
 

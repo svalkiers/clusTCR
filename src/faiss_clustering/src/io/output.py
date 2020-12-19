@@ -1,6 +1,4 @@
-import numpy as np
 import pandas as pd
-import faiss
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,10 +9,9 @@ def path_in_results(filename):
     return os.path.join(RESULTS, filename)
 
 
-def simple_cluster_output(index, data):
+def simple_cluster_output(clustering, data):
     s = ''
-    ids = get_cluster_contents(index)
-    for id_list in ids:
+    for id_list in clustering.get_cluster_contents():
         s += simple_single_cluster_output(id_list, data)
     return s
 
@@ -37,8 +34,8 @@ def simple_output_to_file(index, data: pd.Series, fname):
         f.write(simple_cluster_output(index, data))
 
 
-def cluster_to_csv(index, data, fname):
-    cluster_contents_to_csv(get_cluster_contents(index), data, fname)
+def cluster_to_csv(clustering, data, fname):
+    cluster_contents_to_csv(clustering.get_cluster_contents(), data, fname)
 
 
 def cluster_contents_to_csv(contents, data, fname):
@@ -52,19 +49,3 @@ def cluster_contents_to_csv(contents, data, fname):
     with open(fname, 'w') as f:
         f.write(s)
 
-
-def get_cluster_contents(index):
-    cluster_contents = []
-
-    # code_poslists = []
-    # code_sz = index.invlists.code_size
-
-    for i in range(index.nlist):
-        size = index.invlists.list_size(i)
-        ids = np.array(faiss.rev_swig_ptr(index.invlists.get_ids(i), size))
-        cluster_contents.append(ids)
-
-        # code_poslist = np.array(faiss.rev_swig_ptr(index.invlists.get_codes(list_no), list_sz * code_sz))
-        # code_poslists.append(code_poslist)
-
-    return cluster_contents

@@ -1,7 +1,7 @@
-from src.evaluate import calculate_consistency, calculate_purity, calculate_single_cluster_purity
-from src.cluster import *
-from src.io.datasets import *
-from src.io.output import get_cluster_contents
+from ..evaluate import calculate_consistency, calculate_purity, calculate_single_cluster_purity
+from ..cluster import *
+from ..io.datasets import *
+from ..io.output import get_cluster_contents
 import matplotlib.pyplot as plt
 
 

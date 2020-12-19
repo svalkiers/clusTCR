@@ -1,4 +1,4 @@
-from src.io.input import process_csv, path_in_data
+from .input import process_csv, path_in_data
 
 
 def covid19_repertoire():

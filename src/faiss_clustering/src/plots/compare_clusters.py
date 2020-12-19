@@ -1,6 +1,6 @@
-from src.cluster import *
-from src.io.datasets import covid19_repertoire
-from src.io.output import get_cluster_contents, simple_single_cluster_output, path_in_results
+from ..cluster import *
+from ..io.datasets import covid19_repertoire
+from ..io.output import get_cluster_contents, simple_single_cluster_output, path_in_results
 import matplotlib.pyplot as plt
 
 
