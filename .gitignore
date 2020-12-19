@@ -1,6 +1,5 @@
 # Project exclude paths
 /venv/
 .idea
-todo.txt
 *.aux
 *.log
