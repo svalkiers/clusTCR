@@ -4,7 +4,7 @@ This library aims to do a fast clustering of T-cell receptors using a combinatio
 It relies on the [faiss](https://github.com/facebookresearch/faiss/) library for clustering.
 
 This project is made during an Internship at the [Adrem Data Lab](https://www.uantwerpen.be/en/research-groups/adrem-data-lab/) 
-of the University of Antwerp with supervision and help of [Pieter Meysman](https://www.uantwerpen.be/nl/personeel/pieter-meysman/) and others.
+of the University of Antwerp with supervision and help of [Pieter Meysman](https://www.uantwerpen.be/nl/personeel/pieter-meysman/) and many others.
 
  
 ## Install
@@ -20,79 +20,10 @@ of the University of Antwerp with supervision and help of [Pieter Meysman](https
  If the installation fails because of an incorrect python version, make a new conda python environment with a version that is supported.
  This should fix the problem.
  
- 
-
-## Clustering
-
-A simple clustering of CDR3 sequences can be made by supplying a pandas.Series with the sequences
-
-```python
-from faiss_clustering import FaissClustering
-cdr3 = data['CDR3']
-clustering = FaissClustering.cluster(data)
-```
-
-### Clustering Output
-To analyse the resulting clustering, we can look at the clusters
- ```python
-clustering = FaissClustering.cluster(data)
-for cluster in clustering.get_cluster_contents():
-    print(cluster)  # Prints for example ['CAT', 'CAI', 'CTT']
-``` 
-
-### Properties
-
-The above clustering is done using an optimal combination of chemical properties.
-However, the properties can be manually given:
-```python
-from faiss_clustering import properties
-clustering = FaissClustering.cluster(data, properties=[properties.BASICITY, properties.ISOELECTRIC])
-``` 
-
-### Items per cluster
-
-The method generates clusters of an average size of 10, this can also be adjusted:
- ```python
-clustering = FaissClustering.cluster(data, items_per_cluster=30)
-``` 
-
-
-## Distance Calculation
-
-Calculating the edit distance for each possible pair in large datasets quickly becomes extremely time consuming.
-By first clustering the sequences, we can calculate the distance only for pairs in the same cluster to speed up the process
-while still maintaining decent accuracy.
-
-```python
-from faiss_clustering import DistancePairs
-clustering = FaissClustering.cluster(data)
-distance_pairs = DistancePairs.generate(clustering, data)
-```
-
-### Distance Output
-
-From the distance pairs we can easily output a dictionary where pairs are grouped per distance
-
-```python
-distance_pairs.to_dict()
-# For example { 1: [('CAI', 'CAT'),..], 2: [..] }
-```
-
-### Accuracy
-
-Because we only calculate the distance for the pairs in a cluster, we won't be able to find all the pairs that are close by.
-To check how well we do, we compare the amount of pairs with distance 1 we have found against the total amount of pairs with distance 1, for 
-which there is a fast hashing algorithm.
-
-```python
-distance_pairs.percentage_of_distance1_pairs_found()
-```
-
-
-## Input
+ ## Input
 
 To process a dataset, we can import it with ease using the `process_csv` function.
-We simply provide the files and the cdr3 column name, and it will import it, drop duplicates and drop incomplete sequences.
+We simply provide the files and the cdr3 column name. It will import it, drop duplicates and drop incomplete sequences.
 
 ```python
 from faiss_clustering import process_csv
@@ -112,5 +43,71 @@ When epitopes are also present in a dataset, we simply provide the column name a
 
 ```python
 cdr3, epitopes = process_csv('filename.csv', 'cdr3', epitope_column_name='Epitope')
+```
+
+
+## Clustering
+
+A simple clustering of CDR3 sequences can be made by supplying a `pandas.Series` with the sequences
+
+```python
+from faiss_clustering import FaissClustering
+clustering = FaissClustering.cluster(cdr3)
+```
+
+### Clustering Output
+To analyse the resulting clustering, we can look at the clusters
+ ```python
+for cluster in clustering.get_cluster_contents():
+    print(cluster)  
+    # Prints for example ['CAT', 'CAI', 'CTT']
+``` 
+
+### Properties
+
+The above clustering is done using an optimal combination of chemical properties.
+However, the properties can be manually given:
+```python
+from faiss_clustering import properties
+clustering = FaissClustering.cluster(cdr3, properties=[properties.BASICITY, properties.ISOELECTRIC])
+``` 
+
+### Items per cluster
+
+The method generates clusters of an average size of 10, this can also be adjusted:
+ ```python
+clustering = FaissClustering.cluster(cdr3, avg_items_per_cluster=30)
+``` 
+
+
+## Distance Calculation
+
+Calculating the edit distance for each possible pair in large datasets quickly becomes extremely time consuming.
+By first clustering the sequences, we can calculate the distance only for pairs in the same cluster to speed up the process
+while still maintaining decent accuracy. Keep in mind that we generally want a higher avg_items_per_cluster, as to find the most close-by pairs as possible.
+
+```python
+from faiss_clustering import DistancePairs
+clustering = FaissClustering.cluster(cdr3, avg_items_per_cluster=100)
+distance_pairs = DistancePairs.generate(clustering, cdr3)
+```
+
+### Distance Output
+
+From the distance pairs we can easily output a dictionary where pairs are grouped per distance
+
+```python
+distance_pairs.to_dict()
+# For example { 1: [('CAI', 'CAT'),..], 2: [..] }
+```
+
+### Accuracy
+
+Because we only calculate the distance for the pairs in a cluster, we won't be able to find all the pairs that are close by.
+To check how well we do, we compare the amount of pairs with distance 1 we have found against the total amount of pairs with distance 1, for 
+which there is a fast hashing algorithm.
+
+```python
+distance_pairs.percentage_of_distance1_pairs_found()
 ```
 
