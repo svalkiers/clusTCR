@@ -12,6 +12,7 @@ class FaissClustering:
     def cluster(data: pd.Series,
                 properties: list = OPTIMAL,
                 avg_items_per_cluster=10,
+                use_gpu=False,
                 vector_mapping_func=None,
                 add_average=False,
                 add_length=False):
@@ -36,7 +37,8 @@ class FaissClustering:
                                  add_length=add_length)
         clustering = cluster_with_faiss(profiles,
                                         items_per_cluster=avg_items_per_cluster,
-                                        ids=data.keys().to_numpy())
+                                        ids=data.keys().to_numpy(),
+                                        use_gpu=use_gpu)
         return FaissClustering(clustering, data)
 
     def __init__(self, index, data):

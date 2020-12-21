@@ -88,6 +88,27 @@ The method generates clusters of an average size of 10, this can also be adjuste
 clustering = FaissClustering.cluster(cdr3, avg_items_per_cluster=30)
 ``` 
 
+### GPU Support
+
+The faiss library can use GPUs for the clustering process, which can speed things up when clustering very large datasets.
+Keep in mind that this is only supported for NVIDIA GPUs with CUDA capabilities of minimum compute capability 3.5 ([source](https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU)).
+To check if your GPU is compatible, visit the NVIDIA [website](https://developer.nvidia.com/cuda-gpus).
+
+If your GPU is supported, the faiss-gpu version should be installed as seen below ([source](https://github.com/facebookresearch/faiss/blob/master/INSTALL.md)). 
+This is dependent on the CUDA toolkit installed on your machine. 
+It might also be necessary to uninstall the faiss-cpu version first.
+
+```
+conda install faiss-gpu cudatoolkit=8.0 -c pytorch # For CUDA8
+conda install faiss-gpu cudatoolkit=9.0 -c pytorch # For CUDA9
+conda install faiss-gpu cudatoolkit=10.0 -c pytorch # For CUDA10
+```
+
+When everything is finally installed simply indicate to FaissClustering that you want to use all of your GPUs.
+```python
+clustering = FaissClustering.cluster(cdr3, use_gpu=True)
+```
+
 
 ## Distance Calculation
 

@@ -62,13 +62,16 @@ def pad_vector(vec, n):
 
 # The following line disables an inspection in PyCharm, the train and add methods only require 1 argument instead of 2
 # noinspection PyArgumentList
-def cluster_with_faiss(matrix, items_per_cluster, ids=None):
+def cluster_with_faiss(matrix, items_per_cluster, ids=None, use_gpu=False):
     ncentroids = matrix.shape[0] // items_per_cluster
     if ncentroids == 0:
         ncentroids = 1
     dimension = matrix.shape[1]
     quantizer = faiss.IndexFlatL2(dimension)
     index = faiss.IndexIVFFlat(quantizer, dimension, ncentroids)
+    if use_gpu:
+        print('FAISSCLUSTERING:', faiss.get_num_gpus(), 'GPUs used for clustering')
+        index = faiss.index_cpu_to_all_gpus(index)
     index.train(matrix)
     if ids is not None:
         index.add_with_ids(matrix, ids)
