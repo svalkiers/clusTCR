@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # TCR clustering pipeline
 Two-step TCR clustering approach that combines the speed of the [faiss](https://github.com/facebookresearch/faiss) library with the accuracy of the [Markov Clustering Algorithm](https://micans.org/mcl/).
 
@@ -16,3 +17,7 @@ conda install faiss-cpu -c pytorch
 pip install markov_clustering
 pip install pyteomics
 ```
+=======
+# TCR_network_clustering
+TCR network clustering approach using the Markov Clustering Algorithm.
+>>>>>>> Stashed changes

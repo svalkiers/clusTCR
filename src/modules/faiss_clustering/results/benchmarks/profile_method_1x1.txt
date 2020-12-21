@@ -1,0 +1,13 @@
+
+For each combination of properties, a clustering is made 1 times and timed.
+This process is repeated 1 times and the fastest time is recorded.
+
+The following times are for clustering a dataset of 32500 TCR's 1 times
+
+basicity: 1.90s
+helicity: 1.93s
+hydrophobicity: 1.92s
+basicity + helicity: 2.60s
+basicity + hydrophobicity: 2.60s
+helicity + hydrophobicity: 3.32s
+basicity + helicity + hydrophobicity: 6.01s
