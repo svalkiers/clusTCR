@@ -9,25 +9,8 @@ import pandas as pd
 import networkx as nx
 import markov_clustering as mcl
 
-import olga.load_model as load_model
-import olga.generation_probability as pgen
-
-
-class Dataloader:
-    # infile variable should provide the path to the benchmarking file (e.g. VDJdb)
-    def __init__(self, infile):
-        self.infile = infile
-        
-        
-        
-    def read_bm_file(self, q=None):
-        # NOTE: q-score is only used for VDJdb data.
-        bm = pd.read_csv(self.infile, sep="\t")
-        if q is not None:
-            bm = bm[bm["Score"]>=q]
-        
-        return bm[["CDR3", "Epitope"]].reset_index(drop=True)
-
+import modules.olga.load_model as load_model
+import modules.olga.generation_probability as pgen
 
 
 class Clustering:
