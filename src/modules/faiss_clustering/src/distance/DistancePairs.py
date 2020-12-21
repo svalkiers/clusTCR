@@ -4,7 +4,7 @@ from .tools import make_pairs_with_distance, createNetwork
 class DistancePairs:
 
     @staticmethod
-    def generate(clustering, data):
+    def generate_from_clustering(clustering):
         """
         Generates the distance pairs of a given clustering and returns a DistancePairs object.
         It does this by calculating the distance between each pair in the clusters
@@ -16,8 +16,8 @@ class DistancePairs:
         sort_first: if True, the sequences are first sorted on length before generating the clusters and pairs
         """
         cluster_contents = clustering.get_cluster_contents(include_sequences=False)
-        pairs = make_pairs_with_distance(data, cluster_contents)
-        return DistancePairs(pairs, data)
+        pairs = make_pairs_with_distance(clustering.data, cluster_contents)
+        return DistancePairs(pairs, clustering.data)
 
     def __init__(self, pairs, data):
         self.pairs = pairs

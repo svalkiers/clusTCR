@@ -98,7 +98,7 @@ while still maintaining decent accuracy. Keep in mind that we generally want a h
 ```python
 from faiss_clustering import DistancePairs
 clustering = FaissClustering.cluster(cdr3, avg_items_per_cluster=100)
-distance_pairs = DistancePairs.generate(clustering, cdr3)
+distance_pairs = DistancePairs.generate_from_clustering(clustering)
 ```
 
 ### Distance Output
