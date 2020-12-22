@@ -12,7 +12,8 @@ import modules.olga.load_model as load_model
 import modules.olga.generation_probability as pgen
 
 from modules.faiss_clustering import FaissClustering
-from clustering.tools import create_edgelist
+from clustering.tools import create_edgelist, profile_matrix, motif_from_profile
+from clustering.amino_acid import PHYSCHEM
 
 
 class Clustering:
@@ -133,6 +134,7 @@ class Features:
     # Calculate features for clusters
     def __init__(self, nodes):
         self.nodes = nodes
+        self.clusterids = nodes['cluster'].unique()
 
 
 
@@ -205,38 +207,7 @@ class Features:
         To add a physicochemical property, add a dictionary containing the values for each AA,
         also add physicochemical property to the "physchem_properties" dictionary.
         '''
-        
-        basicity = {
-        'A': 206.4, 'B': 210.7, 'C': 206.2, 'D': 208.6, 'E': 215.6, 'F': 212.1,
-        'G': 202.7, 'H': 223.7, 'I': 210.8, 'K': 221.8, 'L': 209.6, 'M': 213.3,
-        'N': 212.8, 'P': 214.4, 'Q': 214.2, 'R': 237.0, 'S': 207.6, 'T': 211.7,
-        'V': 208.7, 'W': 216.1, 'X': 210.2, 'Y': 213.1, 'Z': 214.9
-        }
-    
-        hydrophobicity = {
-            'A': 0.16, 'B': -3.14, 'C': 2.50, 'D': -2.49, 'E': -1.50, 'F': 5.00,
-            'G': -3.31, 'H': -4.63, 'I': 4.41, 'K': -5.00, 'L': 4.76, 'M': 3.23,
-            'N': -3.79, 'P': -4.92, 'Q': -2.76, 'R': -2.77, 'S': -2.85, 'T': -1.08,
-            'V': 3.02, 'W': 4.88, 'X': 4.59, 'Y': 2.00, 'Z': -2.13
-        }
-    
-        helicity = {
-            'A': 1.24, 'B': 0.92, 'C': 0.79, 'D': 0.89, 'E': 0.85, 'F': 1.26,
-            'G': 1.15, 'H': 0.97, 'I': 1.29, 'K': 0.88, 'L': 1.28, 'M': 1.22,
-            'N': 0.94, 'P': 0.57, 'Q': 0.96, 'R': 0.95, 'S': 1.00, 'T': 1.09,
-            'V': 1.27, 'W': 1.07, 'X': 1.29, 'Y': 1.11, 'Z': 0.91
-        }
-    
-        mutation_stability = {
-            'A': 13, 'C': 52, 'D': 11, 'E': 12, 'F': 32, 'G': 27, 'H': 15, 'I': 10,
-            'K': 24, 'L': 34, 'M': 6, 'N': 6, 'P': 20, 'Q': 10, 'R': 17, 'S': 10,
-            'T': 11, 'V': 17, 'W': 55, 'Y': 31
-        }
-
-        physchem_properties = {'basicity': basicity,
-                               'hydrophobicity': hydrophobicity,
-                               'helicity': helicity,
-                               'mutation stability': mutation_stability}
+        physchem_properties = PHYSCHEM
 
         properties = []
         for seq in self.nodes["CDR3"]:
@@ -259,7 +230,6 @@ class Features:
         By default, OLGA is installed within this repo.
         '''
         
-            
         print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
         user_input = input("Confirm: [Y/N] ")
         
@@ -300,56 +270,16 @@ class Features:
     
     
     
-    def calc_profile(self, sequences):
-        '''
-        Calculates the profile matrix for a set of sequences (i.e. all cluster members).
-        NOTE: this version does not take into account the expected frequency of each amino acid at each position.
-        '''
-        assert type(sequences) == list
-
-        # Amino acid alphabet
-        alphabet = "ARNDCQEGHILKMFPSTWYV"
-
-        # Initiate profile matrix with zeros
-        profile = {}
-        for aa in alphabet:
-            profile[aa] = [0] * len(sequences[0])
+    def clustermotif(self):
         
-        # Fill in profile matrix
-        for pos in range(len(sequences[0])):
-            psc = pd.Series([seq[pos] for seq in sequences]).value_counts()
-            for i in psc.index:
-                profile[i][pos] = np.round(psc.loc[i] / len(sequences),2)
+        clustermotifs = dict()
+        for i in self.clusterids:
+            sequences = self.nodes[self.nodes['cluster'] == i]['CDR3'].tolist()
+            profile = profile_matrix(sequences)
+            motif = motif_from_profile(profile)
+            clustermotifs[i] = motif
         
-        # Generate output as a pd.DataFrame
-        colnames = ["p" + str(p) for p in range(len(sequences[0]))]        
-        profile = pd.DataFrame(profile,index=colnames).T # indices will be columns, because the df is transposed
-        
-        return profile
-    
-    
-    
-    def clustermotif(self, profile):
-        '''
-        Generate consensus sequence motif from a profile matrix.
-        Square brackets [...] indicate multiple aa possibilities at that position.
-        X represents any aa.
-        '''
-        consensus = ''
-        for col in profile.columns:
-            if profile[col].max() > .5:
-                consensus += profile[col].idxmax()
-            elif sum(profile[col].nlargest(2)) >= .5:
-                if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
-                    consensus += profile[col].idxmax()
-                else:
-                    char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
-                    consensus += char
-            else:
-                consensus += "X"
-        
-        return consensus
-    
+        return clustermotifs
     
 
 class Metrics:
