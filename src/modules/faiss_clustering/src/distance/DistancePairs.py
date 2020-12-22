@@ -46,7 +46,24 @@ class DistancePairs:
             if include_sequences:
                 seq1, seq2 = self.data[seq1], self.data[seq2]
             d[distance].append((seq1, seq2))
+        
         return d
+    
+    
+    def get_weighted_edges(self, distances = None, weight = 2):
+        
+        if distances is None:
+            distances = self.to_dict()
+        
+        weighted_edges = []
+        for dist in distances.keys():
+            weighted = dist ** (-weight)
+            for pair in distances[dist]:
+                edge = (*pair, weighted)
+                weighted_edges.append(edge)
+        
+        return weighted_edges
+    
 
     def percentage_of_distance1_pairs_found(self):
         """

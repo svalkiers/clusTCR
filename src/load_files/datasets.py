@@ -1,4 +1,4 @@
-from import_functions import path_in_data, from_tcrdata
+from .import_functions import path_in_data, from_tcrdata
 
 
 def vdj_cdr3():

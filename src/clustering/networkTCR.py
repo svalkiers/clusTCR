@@ -11,10 +11,15 @@ import markov_clustering as mcl
 import modules.olga.load_model as load_model
 import modules.olga.generation_probability as pgen
 
-from modules.faiss_clustering import FaissClustering
+from modules.faiss_clustering import FaissClustering, DistancePairs
 from clustering.tools import create_edgelist, profile_matrix, motif_from_profile
 from clustering.amino_acid import PHYSCHEM
+from load_files.datasets import vdj_small_cdr3
 
+
+def test_data():
+    return vdj_small_cdr3()
+    
 
 class Clustering:
     
@@ -112,6 +117,46 @@ class Clustering:
                 nodelist = nodelist.append(cluster)
         
         return nodelist
+    
+
+
+    def TWOSTEP_V2(self,
+                   size_of_preclusters = 500,
+                   edge_method = 'distance matrix',
+                   max_allowed_distance = 5,
+                   weighting_scheme = 2):
+        '''
+        UNDER CONSTRUCTION
+        '''
+        # Pre-sorting sequences using faiss
+        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters)
+        
+        if edge_method.upper() == 'HASHING':
+            
+            # Actual clustering using MCL
+            initiate = True
+            for c in preclust.get_cluster_contents():
+                try:
+                    edges = create_edgelist(c)
+                    if initiate:
+                        nodelist = self.MCL(edges)
+                        initiate = False
+                    else:
+                        nodes = self.MCL(edges)
+                        nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+                        nodelist = nodelist.append(nodes)
+                # If no edges can be found, leave cluster as is
+                except nx.NetworkXError:
+                    cluster = pd.DataFrame({"CDR3" : c,
+                                            "cluster" : [nodelist["cluster"].max() + 1] * len(c)})
+                    nodelist = nodelist.append(cluster)
+        
+        elif edge_method.upper() == 'DISTANCE MATRIX':
+            
+            distances = DistancePairs.generate(preclust, self.cdr3)
+            weighted_edges = distances.get_weighted_edges()
+        
+        return weighted_edges
     
     
     
@@ -235,10 +280,10 @@ class Features:
         
         if user_input.lower() in ("y", "yes"):
             
-            params_file_name = 'olga/default_models/human_T_beta/model_params.txt'
-            marginals_file_name = 'olga/default_models/human_T_beta/model_marginals.txt'
-            V_anchor_pos_file ='olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
-            J_anchor_pos_file = 'olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
+            params_file_name = 'modules/olga/default_models/human_T_beta/model_params.txt'
+            marginals_file_name = 'modules/olga/default_models/human_T_beta/model_marginals.txt'
+            V_anchor_pos_file ='modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
+            J_anchor_pos_file = 'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
             
             genomic_data = load_model.GenomicDataVDJ()
             genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
