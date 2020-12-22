@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 author: Sebastiaan Valkiers
-
 """
 
 import numpy as np
@@ -12,62 +11,42 @@ import markov_clustering as mcl
 import modules.olga.load_model as load_model
 import modules.olga.generation_probability as pgen
 
+from modules.faiss_clustering import FaissClustering, DistancePairs
+from clustering.tools import create_edgelist, profile_matrix, motif_from_profile
+from clustering.amino_acid import PHYSCHEM
+from load_files.datasets import vdj_small_cdr3
+
+
+def test_data():
+    return vdj_small_cdr3()
+    
 
 class Clustering:
     
-    def __init__(self, _set):
-        # Providing a set guarantees no duplicates.
-        self._set = _set
-        assert type(self._set) == set, "Collection of CDR3 sequences must be a set. Convert input using set()."
+    def __init__(self, cdr3, method):
+        self.cdr3 = cdr3
+        self.method = method.upper()
         
+        available = ["MCL", 
+                     "FAISS",
+                     "TWO-STEP"]
         
-
-    def create_network(self, dist=1, filename=None):
+        assert self.method in available, "Method not available, please choose one of the following methods: \n {}".format(available)
     
-        '''
-        Creates a network where nodes are represented by CDR3 sequences and edges are the edit distance (dist) between them.
-        The algorithm finds matches by hashing the sequences. This provides accurate results for dist = 1, but is not fully
-        accurate for dist > 1.
-        '''
-        
-        # Hashing
-        cdr3hash = dict()
-        for cdr in self._set:
-            for hash in (cdr[::2], cdr[1::2]):
-                if hash not in cdr3hash:
-                    cdr3hash[hash] = set()
-                cdr3hash[hash].add(cdr)
-                
-        # Generate network
-        self.edgelist = set()
-        for hash in cdr3hash:
-            if len(cdr3hash[hash]) >= 1:
-                for cdr1 in cdr3hash[hash]:
-                    for cdr2 in cdr3hash[hash]:
-                        if cdr1 != cdr2:
-                            if cdr1 <= cdr2:
-                                if sum(ch1 != ch2 for ch1, ch2 in zip(cdr1, cdr2)) <= dist:
-                                    self.edgelist.add(cdr1 + "\t" + cdr2)
-
-        # Write results to file
-        if filename is not None:
-            with open(filename, 'w') as f:
-                for item in self.edgelist:
-                    f.write("%s\n" % item)
-
-        return self.edgelist
 
 
-
-    def network_clustering(self, edgelist, mcl_hyper=[1.2,2], outfile=None):
+    def MCL(self, edgelist = None, mcl_hyper=[1.2,2], outfile=None):
     
         '''
         Perform clustering on a network of CDR3 amino acid sequences with a known hamming distance,
         using the Markov clustering (MCL) algorithm. For more info about the inflation and expansion
         parameters, visit: https://micans.org/mcl/
-        
-        The output file can be visualized using dedicated network visalisation software such as Cytoscape.
         '''
+        
+        if edgelist is None:
+            edgelist = create_edgelist(self.cdr3)
+        else:
+            pass
         
         # Generate network using nx
         G = nx.parse_adjlist(edgelist, nodetype=str)
@@ -97,64 +76,110 @@ class Clustering:
             
         return nodelist
     
-
-
-    def calc_profile(self, sequences):
-        '''
-        Calculates the profile matrix for a set of sequences (i.e. all cluster members).
-        NOTE: this version does not take into account the expected frequency of each amino acid at each position.
-        '''
-        assert type(sequences) == list
-
-        # Amino acid alphabet
-        alphabet = "ARNDCQEGHILKMFPSTWYV"
-
-        # Initiate profile matrix with zeros
-        profile = {}
-        for aa in alphabet:
-            profile[aa] = [0] * len(sequences[0])
-        
-        # Fill in profile matrix
-        for pos in range(len(sequences[0])):
-            psc = pd.Series([seq[pos] for seq in sequences]).value_counts()
-            for i in psc.index:
-                profile[i][pos] = np.round(psc.loc[i] / len(sequences),2)
-        
-        # Generate output as a pd.DataFrame
-        colnames = ["p" + str(p) for p in range(len(sequences[0]))]        
-        profile = pd.DataFrame(profile,index=colnames).T # indices will be columns, because the df is transposed
-        
-        return profile
     
     
+    def FAISS(self, cluster_size = 10):
+        
+        nodelist = {"CDR3":[], "cluster":[]}
+        clusters = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = cluster_size)
+        for cluster in clusters:
+            nodelist["CDR3"].append(cluster)
+            nodelist["CDR3"].append(len(nodelist["cluster"]))
+            
+        return nodelist
     
-    def clustermotif(self, profile):
+    
+    def TWOSTEP(self, size_of_preclusters = 500):
         '''
-        Generate consensus sequence motif from a profile matrix.
-        Square brackets [...] indicate multiple aa possibilities at that position.
-        X represents any aa.
+        Two-step clustering procedure that combines the speed of the faiss method
+        with the accuracy of MCL.
         '''
-        consensus = ''
-        for col in profile.columns:
-            if profile[col].max() > .5:
-                consensus += profile[col].idxmax()
-            elif sum(profile[col].nlargest(2)) >= .5:
-                if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
-                    consensus += profile[col].idxmax()
+        
+        # Pre-sorting sequences using faiss
+        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters)
+        
+        # Actual clustering using MCL
+        initiate = True
+        for c in preclust.get_cluster_contents():
+            try:
+                edges = create_edgelist(c)
+                if initiate:
+                    nodelist = self.MCL(edges)
+                    initiate = False
                 else:
-                    char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
-                    consensus += char
-            else:
-                consensus += "X"
+                    nodes = self.MCL(edges)
+                    nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+                    nodelist = nodelist.append(nodes)
+            # If no edges can be found, leave cluster as is
+            except nx.NetworkXError:
+                cluster = pd.DataFrame({"CDR3" : c,
+                                        "cluster" : [nodelist["cluster"].max() + 1] * len(c)})
+                nodelist = nodelist.append(cluster)
         
-        return consensus
+        return nodelist
+    
+
+
+    def TWOSTEP_V2(self,
+                   size_of_preclusters = 500,
+                   edge_method = 'distance matrix',
+                   max_allowed_distance = 5,
+                   weighting_scheme = 2):
+        '''
+        UNDER CONSTRUCTION
+        '''
+        # Pre-sorting sequences using faiss
+        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters)
+        
+        if edge_method.upper() == 'HASHING':
+            
+            # Actual clustering using MCL
+            initiate = True
+            for c in preclust.get_cluster_contents():
+                try:
+                    edges = create_edgelist(c)
+                    if initiate:
+                        nodelist = self.MCL(edges)
+                        initiate = False
+                    else:
+                        nodes = self.MCL(edges)
+                        nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+                        nodelist = nodelist.append(nodes)
+                # If no edges can be found, leave cluster as is
+                except nx.NetworkXError:
+                    cluster = pd.DataFrame({"CDR3" : c,
+                                            "cluster" : [nodelist["cluster"].max() + 1] * len(c)})
+                    nodelist = nodelist.append(cluster)
+        
+        elif edge_method.upper() == 'DISTANCE MATRIX':
+            
+            distances = DistancePairs.generate(preclust, self.cdr3)
+            weighted_edges = distances.get_weighted_edges()
+        
+        return weighted_edges
     
     
+    
+    def TCR_clustering(self):
+        
+        if self.method == 'MCL':
+            nodelist = self.MCL()
+            
+        elif self.method == 'FAISS':
+            nodelist = self.FAISS()
+            
+        elif self.method == 'TWO-STEP':
+            nodelist = self.TWOSTEP()
+            
+        return nodelist
+        
+            
 
 class Features:
     # Calculate features for clusters
     def __init__(self, nodes):
         self.nodes = nodes
+        self.clusterids = nodes['cluster'].unique()
 
 
 
@@ -227,38 +252,7 @@ class Features:
         To add a physicochemical property, add a dictionary containing the values for each AA,
         also add physicochemical property to the "physchem_properties" dictionary.
         '''
-        
-        basicity = {
-        'A': 206.4, 'B': 210.7, 'C': 206.2, 'D': 208.6, 'E': 215.6, 'F': 212.1,
-        'G': 202.7, 'H': 223.7, 'I': 210.8, 'K': 221.8, 'L': 209.6, 'M': 213.3,
-        'N': 212.8, 'P': 214.4, 'Q': 214.2, 'R': 237.0, 'S': 207.6, 'T': 211.7,
-        'V': 208.7, 'W': 216.1, 'X': 210.2, 'Y': 213.1, 'Z': 214.9
-        }
-    
-        hydrophobicity = {
-            'A': 0.16, 'B': -3.14, 'C': 2.50, 'D': -2.49, 'E': -1.50, 'F': 5.00,
-            'G': -3.31, 'H': -4.63, 'I': 4.41, 'K': -5.00, 'L': 4.76, 'M': 3.23,
-            'N': -3.79, 'P': -4.92, 'Q': -2.76, 'R': -2.77, 'S': -2.85, 'T': -1.08,
-            'V': 3.02, 'W': 4.88, 'X': 4.59, 'Y': 2.00, 'Z': -2.13
-        }
-    
-        helicity = {
-            'A': 1.24, 'B': 0.92, 'C': 0.79, 'D': 0.89, 'E': 0.85, 'F': 1.26,
-            'G': 1.15, 'H': 0.97, 'I': 1.29, 'K': 0.88, 'L': 1.28, 'M': 1.22,
-            'N': 0.94, 'P': 0.57, 'Q': 0.96, 'R': 0.95, 'S': 1.00, 'T': 1.09,
-            'V': 1.27, 'W': 1.07, 'X': 1.29, 'Y': 1.11, 'Z': 0.91
-        }
-    
-        mutation_stability = {
-            'A': 13, 'C': 52, 'D': 11, 'E': 12, 'F': 32, 'G': 27, 'H': 15, 'I': 10,
-            'K': 24, 'L': 34, 'M': 6, 'N': 6, 'P': 20, 'Q': 10, 'R': 17, 'S': 10,
-            'T': 11, 'V': 17, 'W': 55, 'Y': 31
-        }
-
-        physchem_properties = {'basicity': basicity,
-                               'hydrophobicity': hydrophobicity,
-                               'helicity': helicity,
-                               'mutation stability': mutation_stability}
+        physchem_properties = PHYSCHEM
 
         properties = []
         for seq in self.nodes["CDR3"]:
@@ -281,16 +275,15 @@ class Features:
         By default, OLGA is installed within this repo.
         '''
         
-            
         print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
         user_input = input("Confirm: [Y/N] ")
         
         if user_input.lower() in ("y", "yes"):
             
-            params_file_name = 'olga/default_models/human_T_beta/model_params.txt'
-            marginals_file_name = 'olga/default_models/human_T_beta/model_marginals.txt'
-            V_anchor_pos_file ='olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
-            J_anchor_pos_file = 'olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
+            params_file_name = 'modules/olga/default_models/human_T_beta/model_params.txt'
+            marginals_file_name = 'modules/olga/default_models/human_T_beta/model_marginals.txt'
+            V_anchor_pos_file ='modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
+            J_anchor_pos_file = 'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
             
             genomic_data = load_model.GenomicDataVDJ()
             genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
@@ -317,10 +310,21 @@ class Features:
         
         
     
-    
     def combine(self, *args):
         return pd.concat([*args], axis=1)
     
+    
+    
+    def clustermotif(self):
+        
+        clustermotifs = dict()
+        for i in self.clusterids:
+            sequences = self.nodes[self.nodes['cluster'] == i]['CDR3'].tolist()
+            profile = profile_matrix(sequences)
+            motif = motif_from_profile(profile)
+            clustermotifs[i] = motif
+        
+        return clustermotifs
     
 
 class Metrics:

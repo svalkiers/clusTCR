@@ -17,7 +17,7 @@ def from_tcrdata(filename, epitopes = False, sep = '\t', q = None):
     if epitopes:
         return bm[["CDR3", "Epitope"]].reset_index(drop = True)
     else:
-        return bm["CDR3"].unique()
+        return pd.Series(bm["CDR3"].unique())
     
 def from_edgelist(filename):
     
