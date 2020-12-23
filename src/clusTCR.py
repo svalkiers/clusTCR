@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-author: Sebastiaan Valkiers
-"""
-
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -11,14 +6,17 @@ import markov_clustering as mcl
 import modules.olga.load_model as load_model
 import modules.olga.generation_probability as pgen
 
-from modules.faiss_clustering import FaissClustering, DistancePairs
-from clustering.tools import create_edgelist, profile_matrix, motif_from_profile
-from clustering.amino_acid import PHYSCHEM
-from load_files.datasets import vdj_small_cdr3
+from modules.faiss_clustering import FaissClustering
+from toolkit.tools import create_edgelist, profile_matrix, motif_from_profile
+from toolkit.amino_acid import PHYSCHEM
+from load_files.datasets import vdj_small_cdr3, vdj_small_with_epitopes
 
 
-def test_data():
+def test_cdr3():
     return vdj_small_cdr3()
+
+def test_epitope():
+    return vdj_small_with_epitopes()
     
 
 class Clustering:
@@ -120,7 +118,7 @@ class Clustering:
     
     
     
-    def TCR_clustering(self):
+    def cluster_sequences(self):
         
         if self.method == 'MCL':
             nodelist = self.MCL()
@@ -349,7 +347,7 @@ class Metrics:
         hits_t = np.sum(conf_mat[0].apply(np.max,axis=0))
         hits_b = np.sum(conf_mat[1].apply(np.max,axis=0))
         
-        return {"True":hits_t/np.sum(conf_mat[0].values,axis=None), "Baseline":hits_b/np.sum(conf_mat[1].values,axis=None)}
+        return {"Actual":hits_t/np.sum(conf_mat[0].values,axis=None), "Permuted":hits_b/np.sum(conf_mat[1].values,axis=None)}
     
     
     
@@ -373,4 +371,4 @@ class Metrics:
             
             return high
         
-        return {"True":rec_max(conf_mat[0])/len(self.gt), "Baseline":rec_max(conf_mat[1])/len(self.gt_baseline)}
+        return {"Actual":rec_max(conf_mat[0])/len(self.gt), "Permuted":rec_max(conf_mat[1])/len(self.gt_baseline)}        
