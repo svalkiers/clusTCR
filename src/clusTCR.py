@@ -87,14 +87,14 @@ class Clustering:
         return nodelist
     
     
-    def TWOSTEP(self, size_of_preclusters = 500):
+    def TWOSTEP(self, size_of_preclusters = 5000, use_gpu = False):
         '''
         Two-step clustering procedure that combines the speed of the faiss method
         with the accuracy of MCL.
         '''
         
         # Pre-sorting sequences using faiss
-        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters)
+        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters, use_gpu = use_gpu)
         
         # Actual clustering using MCL
         initiate = True
