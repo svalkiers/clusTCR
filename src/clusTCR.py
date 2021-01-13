@@ -9,14 +9,14 @@ import modules.olga.generation_probability as pgen
 from modules.faiss_clustering import FaissClustering
 from toolkit.tools import create_edgelist, profile_matrix, motif_from_profile
 from toolkit.amino_acid import PHYSCHEM
-from load_files.datasets import vdj_small_cdr3, vdj_small_with_epitopes
+from load_files.datasets import vdj_cdr3_small, vdj_epitopes_small
 
 
 def test_cdr3():
-    return vdj_small_cdr3()
+    return vdj_cdr3_small()
 
 def test_epitope():
-    return vdj_small_with_epitopes()
+    return vdj_epitopes_small()
     
 
 class Clustering:
@@ -94,7 +94,9 @@ class Clustering:
         '''
         
         # Pre-sorting sequences using faiss
-        preclust = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = size_of_preclusters, use_gpu = use_gpu)
+        preclust = FaissClustering.cluster(self.cdr3.reset_index(drop = True), 
+                                           avg_items_per_cluster = size_of_preclusters, 
+                                           use_gpu = use_gpu)
         
         # Actual clustering using MCL
         initiate = True

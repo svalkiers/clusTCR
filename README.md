@@ -1,5 +1,7 @@
-# CDR3 clustering algorithm
-Two-step TCR clustering approach that combines the speed of the [faiss](https://github.com/facebookresearch/faiss) library with the accuracy of the [Markov Clustering Algorithm](https://micans.org/mcl/).
+# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences
+clusTCR is a two-step clustering approach that combines the speed of the [faiss](https://github.com/facebookresearch/faiss) library with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/). Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255.35.37:8080/) and [iSMART](https://github.com/s175573/iSMART)), clusTCR slightly underperforms in clustering quality, but provides a steep increase in speed and scalability. Using a standard laptop, clusTCR can cluster 2,000,000 sequences in a little over 30 minutes (Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz).
+
+<img src="results/figures/methods.png" alt="drawing" width="500"/>
 
 ## Dependencies
 The minimum requirement to use this software is the installation of the following Python packages:
@@ -18,7 +20,58 @@ pip install markov_clustering
 pip install pyteomics
 ```
 
+Other dependencies have been pre-installed into the repository. To install clusTCR, navigate to the folder in which you want to install the software and execute the following command:
+
+```shell
+git clone https://github.com/svalkiers/clusTCR
+```
+
 ## Tutorial
+
+> **_NOTE:_**  Change your working directory to the *src/* folder.
+
+```python
+import os
+os.chdir(/home/<user>/<path_to_repo>/clusTCR/src/)
+```
+
+### Importing data sets
+
+The current version of clusTCR supports two input formats: VDJdb and immuneACCESS. A recent version of all human TRB sequences exported from VDJdb is included in the [data/vdjdb/](data/vdjdb/) folder. Files exported from immuneACCESS should be stored under [data/immuneACCESS/](data/immuneACCESS/).
+
+To import any set of data, you should add first add the data set folder to your `sys.path` variable:
+
+```python
+import sys
+import os
+
+# Add path to data sets to your sys.path variable, this allows you to import them
+path = os.getcwd() + '/load_files/'
+sys.path.insert(1, path)
+```
+
+Next, you can retrieve CDR3 sequences from the VDJdb by importing the following functions from the `datasets` module:
+
+```python
+from datasets import vdj_cdr3, vdj_cdr3_small
+
+vdjdb_regular = vdj_cdr3() # pandas.Series of all CDR3 sequences corresponding to human TRBs in the VDJdb
+vdjdb_small = vdj_cdr3_small() # Subset of high quality entries in the VDJdb
+```
+
+To import CDR3 sequences from an immuneACCESS file, perform the following sequence of code (make sure you added data folder to the `sys.path` variable):
+
+```python
+from datasets import immuneACCESS_cdr3
+immuneaccess = immuneACCESS_cdr3() # pandas.Series of CDR3 sequences in immuneACCESS repertoire file
+```
+
+The clusTCR platform also provides the functionality to construct a meta-repertoire from a list of immuneACCESS files. This functionality can be used to perform clustering on a number of samples, all at once. By default, clusTCR will search the [data/immuneACCESS/](data/immuneACCESS/) folder and starts randomly combining files until a desired threshold is met (e.g. 2,000,000 sequences).
+
+```python
+from datasets import metarepertoire_cdr3
+meta_repertoire = metarepertoire_cdr3(n_sequences = 10**6) # pandas.Series containing 1,000,000 CDR3 sequences
+```
 
 ### Clustering
 
@@ -31,8 +84,8 @@ cdr3 = test_cdr3() # pandas.Series with CDR3 sequences
 
 The next step is to generate a `clusTCR.Clustering` object. The `Clustering` method takes two arguments:
 
-1. A series of CDR3 amino acid sequences.
-2. The desired clustering method. Currently, `clusTCR` contains three clustering approaches: MCL-based clustering, faiss-based clustering, and a two-step clustering procedure which combines the first two methods for an increase in speed and accuracy.
+1. A `pandas.Series` of CDR3 amino acid sequences.
+2. The desired clustering method. Currently, `clusTCR` contains three clustering approaches: **MCL-based clustering, faiss-based clustering, and a two-step clustering** procedure which combines the first two methods for an increase in speed and accuracy. Valid options are: *mcl*, *faiss* or *two-step*. We recommend using *mcl* for data sets containing < 50,000 CDR3 sequences, and *two-step* for all data sets with > 50,000 sequences.
 
 To perform the actual clustering, you will need to execute the `cluster_sequences()` method on the newly created object.
 
@@ -126,7 +179,7 @@ To get a quick overview of the newly generated features, the `cluster_analyzer` 
 feature_generator.perform_PCA(features)
 ```
 
-<img src="results/figures/cluster_features_PCA.png" alt="drawing" width="750"/>
+<img src="results/figures/cluster_features_PCA.png" alt="drawing" width="500"/>
 
 The PCA plot is saved under [figures](results/figures/) in the results folder.
 
@@ -168,5 +221,5 @@ You can evaluate your own model using the `.evaluate_model()` function. This wil
 model_training.evaluate_model()
 ```
 
-<img src="results/figures/cluster_quality_ROC.png" alt="drawing" width="750"/>
+<img src="results/figures/cluster_quality_ROC.png" alt="drawing" width="700"/>
 

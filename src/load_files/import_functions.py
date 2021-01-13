@@ -1,5 +1,4 @@
 import json
-import pandas as pd
 
 from os.path import dirname, abspath, join
 
@@ -8,16 +7,6 @@ DATA = join(ROOT, 'data')
 
 def path_in_data(filename):
     return join(DATA, filename)
-
-def from_tcrdata(filename, epitopes = False, sep = '\t', q = None):
-    # NOTE: q-score is only used for VDJdb data.
-    bm = pd.read_csv(filename, sep = sep)
-    if q is not None:
-        bm = bm[bm["Score"] >= q]
-    if epitopes:
-        return bm[["CDR3", "Epitope"]].reset_index(drop = True)
-    else:
-        return pd.Series(bm["CDR3"].unique())
     
 def from_edgelist(filename):
     
@@ -26,16 +15,14 @@ def from_edgelist(filename):
     
     return edges
     
-def from_json(filename, max_distance = 3, weight = -3):
+def from_json(filename, max_distance = 3, weight = -1):
     '''
-    Import your weighted network.
-    
-    jsonfile : jsonfile that contains the 
+    Import weighted network from json file.
     max_distance : max allowed distance
     weight : negative exponential that downweighs sequence pairs proportional to their distance
     '''
     
-    with open(filename, 'r') as f:
+    with open(path_in_data(filename), 'r') as f:
         dist = json.loads(f.read())
         
     distances = []
