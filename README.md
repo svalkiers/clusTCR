@@ -1,29 +1,25 @@
 # clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences
 clusTCR is a two-step clustering approach that combines the speed of the [faiss](https://github.com/facebookresearch/faiss) library with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/). Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255.35.37:8080/) and [iSMART](https://github.com/s175573/iSMART)), clusTCR slightly underperforms in clustering quality, but provides a steep increase in speed and scalability. Using a standard laptop, clusTCR can cluster 2,000,000 sequences in a little over 30 minutes (Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz).
 
-<div style="text-align:center"><img src="results/figures/methods.png" alt="drawing" width="400"/>
+<img src="results/figures/methods.png" alt="drawing" class="center" width="400"/>
 
 ## Installation
-The minimum requirement to use this software is the installation of the following Python packages:
-<br/>
-
-- Through `conda`
-```
-conda install pandas
-conda install networkx
-conda install scikit-learn
-conda install faiss-cpu -c pytorch
-```
-- Through `pip`
-```
-pip install markov_clustering
-pip install pyteomics
-```
-
-Other dependencies have been pre-installed into the repository. To install clusTCR, navigate to the folder in which you want to install the software and execute the following command:
+To install clusTCR, navigate to the folder in which you want to install the software and execute the following command:
 
 ```shell
 git clone https://github.com/svalkiers/clusTCR
+```
+
+Next, you can directly install all the necessary dependencies by creating a new conda environment from the [env.yml](env.yml) file.
+
+```shell
+conda env create -f env.yml
+```
+
+Other dependencies have been integrated into the repository (under [src/modules/](src/modules)). Next, activate the new environment:
+
+```shell
+conda activate clusTCR
 ```
 
 ## Tutorial
@@ -55,22 +51,22 @@ Next, you can retrieve CDR3 sequences from the VDJdb by importing the following 
 ```python
 from datasets import vdj_cdr3, vdj_cdr3_small
 
-vdjdb_regular = vdj_cdr3() # pandas.Series of all CDR3 sequences corresponding to human TRBs in the VDJdb
-vdjdb_small = vdj_cdr3_small() # Subset of high quality entries in the VDJdb
+vdjdb_regular = vdj_cdr3() # pandas.Series of all human CDR3 beta in VDJdb
+vdjdb_small = vdj_cdr3_small() # Subset of high quality entries
 ```
 
 To import CDR3 sequences from an immuneACCESS file, perform the following sequence of code (make sure you added data folder to the `sys.path` variable):
 
 ```python
 from datasets import immuneACCESS_cdr3
-immuneaccess = immuneACCESS_cdr3() # pandas.Series of CDR3 sequences in immuneACCESS repertoire file
+immuneaccess = immuneACCESS_cdr3() # pandas.Series of CDR3s in immuneACCESS file
 ```
 
 The clusTCR platform also provides the functionality to construct a meta-repertoire from a list of immuneACCESS files. This functionality can be used to perform clustering on a number of samples, all at once. By default, clusTCR will search the [data/immuneACCESS/](data/immuneACCESS/) folder and starts randomly combining files until a desired threshold is met (e.g. 2,000,000 sequences).
 
 ```python
 from datasets import metarepertoire_cdr3
-meta_repertoire = metarepertoire_cdr3(n_sequences = 10**6) # pandas.Series containing 1,000,000 CDR3 sequences
+meta_repertoire = metarepertoire_cdr3(n_sequences = 10**6) # pandas.Series containing 1M CDR3s
 ```
 
 ### Clustering
@@ -79,7 +75,7 @@ To perform clustering, import the `Clustering` module from `clusTCR`. A test set
 
 ```python
 from clusTCR import test_cdr3
-cdr3 = test_cdr3() # pandas.Series with CDR3 sequences
+cdr3 = test_cdr3()
 ```
 
 The next step is to generate a `clusTCR.Clustering` object. The `Clustering` method takes two arguments:
