@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import random
 
-from import_functions import path_in_data
+from .import_functions import path_in_data
 
 
 def parse_immuneACCESS(filename, separator = '\t'):

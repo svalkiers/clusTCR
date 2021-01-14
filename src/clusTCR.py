@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import markov_clustering as mcl
+import multiprocessing
+import parmap
 
 import modules.olga.load_model as load_model
 import modules.olga.generation_probability as pgen
@@ -21,15 +23,24 @@ def test_epitope():
 
 class Clustering:
     
-    def __init__(self, cdr3, method):
+    def __init__(self, cdr3, method, n_cpus = 1):
         self.cdr3 = cdr3
         self.method = method.upper()
+        if n_cpus.upper() == 'MAX':
+            self.n_cpus = multiprocessing.cpu_count()
+        else:
+            self.n_cpus = int(n_cpus)
         
         available = ["MCL", 
                      "FAISS",
                      "TWO-STEP"]
         
         assert self.method in available, "Method not available, please choose one of the following methods: \n {}".format(available)
+        
+        # Multiprocessing currently only available for Two-step method.
+        # Use 1 cpu for other methods.
+        if self.method in available[:-1]:
+            self.n_cpus = 1
     
 
 
@@ -46,7 +57,6 @@ class Clustering:
         else:
             pass
         
-        # Generate network using nx
         G = nx.parse_adjlist(edgelist, nodetype=str)
         m = nx.to_scipy_sparse_matrix(G)
         
@@ -98,23 +108,58 @@ class Clustering:
                                            avg_items_per_cluster = size_of_preclusters, 
                                            use_gpu = use_gpu)
         
-        # Actual clustering using MCL
-        initiate = True
-        for c in preclust.get_cluster_contents():
-            try:
-                edges = create_edgelist(c)
-                if initiate:
-                    nodelist = self.MCL(edges)
-                    initiate = False
+        if self.n_cpus > 1:
+        # Pool multiple processes for parallelization using multiple cpus.
+            clusters = []
+            idxs_to_remove = []
+            edges = [create_edgelist(c) for c in preclust.get_cluster_contents()]
+            # Clusters containing no edges with HD = 1 are isolated
+            for val in edges:
+                if len(val) == 0:
+                    idx = edges.index(val)
+                    idxs_to_remove.append(idx)
+                    clust = preclust.get_cluster_contents()[idx]
+                    if len(clusters) == 0:
+                        clusters.append(pd.DataFrame({'CDR3' : clust,
+                                                      'cluster' : [0] * len(clust)}))
+                    else:
+                        clusters.append(pd.DataFrame({'CDR3' : clust,
+                                                      'cluster' : (clusters[-1]['cluster'].max() + 1) * len(clust)}))
+            for index in sorted(idxs_to_remove, reverse=True):
+                del edges[index]
+            # Perform MCL on other clusters        
+            with multiprocessing.Pool(self.n_cpus) as pool:
+                nodelist = parmap.map(self.MCL,
+                                      edges,
+                                      pm_parallel=True,
+                                      pm_pool=pool)
+                nodelist += clusters
+            # Fix cluster ids
+            for c in range(len(nodelist)):
+                if c == 0:
+                    pass
                 else:
-                    nodes = self.MCL(edges)
-                    nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
-                    nodelist = nodelist.append(nodes)
-            # If no edges can be found, leave cluster as is
-            except nx.NetworkXError:
-                cluster = pd.DataFrame({"CDR3" : c,
-                                        "cluster" : [nodelist["cluster"].max() + 1] * len(c)})
-                nodelist = nodelist.append(cluster)
+                    nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1       
+            nodelist = pd.concat(nodelist)
+            
+        else:
+        # Regular version, using 1 cpu.
+            initiate = True
+            for c in preclust.get_cluster_contents():
+                try:
+                    edges = create_edgelist(c)
+                    if initiate:
+                        nodelist = self.MCL(edges)
+                        initiate = False
+                    else:
+                        nodes = self.MCL(edges)
+                        nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+                        nodelist = nodelist.append(nodes)
+                # If no edges can be found, leave cluster as is
+                except nx.NetworkXError:
+                    cluster = pd.DataFrame({"CDR3" : c,
+                                            "cluster" : [nodelist["cluster"].max() + 1] * len(c)})
+                    nodelist = nodelist.append(cluster)
         
         return nodelist
     

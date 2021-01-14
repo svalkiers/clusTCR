@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-from import_functions import path_in_data
+from .import_functions import path_in_data
 
 
 def parse_vdjdb_file(filename, q = 0):
