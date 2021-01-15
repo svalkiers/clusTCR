@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import faiss
 
@@ -40,30 +39,8 @@ class FaissClustering:
                                         ids=data.keys().to_numpy(),
                                         use_gpu=use_gpu)
         if use_gpu:
-            success = False
-
-            try:
-                clustering = faiss.extract_index_ivf(clustering)
-                # Try to access invlists
-                a = clustering.invlists
-                success = True
-                print('Extracting worked')
-            except:
-                print("Extracting didn't work")
-
-            if not success:
-                try:
-                    clustering = faiss.index_gpu_to_cpu(clustering)
-                    # Try to access invlists
-                    a = clustering.invlists
-                    success = True
-                    print('Converting worked')
-                except:
-                    print("Converting didn't work")
-
-            if not success:
-                raise RuntimeError("Didn't work :(")
-
+            # noinspection PyUnresolvedReferences
+            clustering = faiss.index_gpu_to_cpu(clustering)
         return FaissClustering(clustering, data)
 
     def __init__(self, index, data):
