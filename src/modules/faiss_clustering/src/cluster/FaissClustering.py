@@ -39,6 +39,7 @@ class FaissClustering:
                                         ids=data.keys().to_numpy(),
                                         use_gpu=use_gpu)
         if use_gpu:
+            print('Converting GPU index to CPU index')
             # noinspection PyUnresolvedReferences
             clustering = faiss.index_gpu_to_cpu(clustering)
         return FaissClustering(clustering, data)
