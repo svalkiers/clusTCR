@@ -39,6 +39,8 @@ class FaissClustering:
                                         items_per_cluster=avg_items_per_cluster,
                                         ids=data.keys().to_numpy(),
                                         use_gpu=use_gpu)
+        if use_gpu:
+            clustering = clustering.index_
         return FaissClustering(clustering, data)
 
     def __init__(self, index, data):
