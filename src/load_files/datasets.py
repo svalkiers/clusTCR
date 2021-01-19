@@ -24,8 +24,14 @@ def immuneACCESS_cdr3(file):
     return immuneACCESS_to_cdr3list(file)
 
 def metarepertoire_gliph2(n_sequences = 10**6):
-    return construct_metarepertoire('emerson_cohort_1/', n_sequences = n_sequences)
+    return construct_metarepertoire('emerson_cohort_1/', 
+                                    n_sequences = n_sequences)
+
+def metarepertoire_tcrdist(n_sequences = 10**6):
+    metarepertoire = construct_metarepertoire('emerson_cohort_1/', 
+                                              n_sequences = n_sequences)
+    return metarepertoire.rename(columns = {'CDR3':'cdr3_b_aa', 'V':'v_b_gene'})
 
 def metarepertoire_cdr3(n_sequences = 10**6):
-    metarepertoire = construct_metarepertoire('emerson_cohort_1/', n_sequences = n_sequences)
-    return metarepertoire.CDR3
+    return construct_metarepertoire('emerson_cohort_1/', 
+                                    n_sequences = n_sequences).CDR3

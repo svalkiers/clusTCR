@@ -23,13 +23,35 @@ def test_epitope():
 
 class Clustering:
     
-    def __init__(self, cdr3, method, n_cpus = 1):
+    def __init__(self, 
+                 cdr3: pd.Series, 
+                 method = 'two-step', 
+                 n_cpus = 1, 
+                 gpu_enabled = False):
+        
+        """
+        Flexible method for clustering of large sets of TCR sequences.
+
+        Parameters
+        ----------
+        cdr3 : pd.Series
+            Input data consisting of a list of CDR3 amino acid sequences.
+        method : str
+            Clustering method. The default is two-step.
+        n_cpus : int, optional
+            Number of GPUs to use for clustering. -1 to use all GPUs.
+            The default is 1.
+        gpu_enabled : bool, optional
+            Enable GPU computing for FAISS clustering. The default is False.
+        """
+        
         self.cdr3 = cdr3
         self.method = method.upper()
-        if n_cpus.upper() == 'MAX':
+        if n_cpus == -1:
             self.n_cpus = multiprocessing.cpu_count()
         else:
             self.n_cpus = int(n_cpus)
+        self.gpu = gpu_enabled
         
         available = ["MCL", 
                      "FAISS",
@@ -97,7 +119,7 @@ class Clustering:
         return nodelist
     
     
-    def TWOSTEP(self, size_of_preclusters = 5000, use_gpu = False):
+    def TWOSTEP(self, size_of_preclusters = 5000):
         '''
         Two-step clustering procedure that combines the speed of the faiss method
         with the accuracy of MCL.
@@ -106,7 +128,7 @@ class Clustering:
         # Pre-sorting sequences using faiss
         preclust = FaissClustering.cluster(self.cdr3.reset_index(drop = True), 
                                            avg_items_per_cluster = size_of_preclusters, 
-                                           use_gpu = use_gpu)
+                                           use_gpu = self.gpu)
         
         if self.n_cpus > 1:
         # Pool multiple processes for parallelization using multiple cpus.

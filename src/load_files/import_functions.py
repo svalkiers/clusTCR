@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 
 from os.path import dirname, abspath, join
 
@@ -7,6 +8,13 @@ DATA = join(ROOT, 'data')
 
 def path_in_data(filename):
     return join(DATA, filename)
+
+def imgt_v_genes(filename = 'alphabeta_gammadelta_db.tsv'):
+    v_genes = pd.read_csv(path_in_data(filename), sep='\t')
+    v_genes = v_genes[v_genes['chain']=='B']
+    v_genes = v_genes[v_genes['region']=='V']
+    v_genes = v_genes[v_genes['organism']=='human']
+    return v_genes['id']
     
 def from_edgelist(filename):
     
