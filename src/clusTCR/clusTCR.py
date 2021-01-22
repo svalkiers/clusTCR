@@ -82,7 +82,7 @@ class Clustering:
         G = nx.parse_adjlist(edgelist, nodetype=str)
         m = nx.to_scipy_sparse_matrix(G)
         
-        # Run MCL
+        # Run MC
         result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
         clusters = mcl.get_clusters(result)
         identifiers = list(G.nodes())
@@ -187,10 +187,10 @@ class Clustering:
     
     
     
-    def get_clusters(self):
+    def get_clusters(self, mcl_params=[1.2,2]):
         
         if self.method == 'MCL':
-            nodelist = self.MCL()
+            nodelist = self.MCL(mcl_hyper=mcl_params)
             
         elif self.method == 'FAISS':
             nodelist = self.FAISS()
