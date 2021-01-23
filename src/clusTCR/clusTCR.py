@@ -371,8 +371,7 @@ class Metrics:
         self.gt_baseline = self.gt.copy()
         self.gt_baseline["cluster"] = np.random.permutation(self.gt_baseline["cluster"])
         
-        if name is not None:
-            self.name = name
+        self.name = name
     
     
     
