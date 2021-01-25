@@ -1,37 +1,8 @@
-## Welcome to GitHub Pages
+## clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences
 
-You can use the [editor on GitHub](https://github.com/MaxVanHoucke/JsonMax/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+clusTCR is a two-step clustering approach that combines the speed of the [faiss](https://github.com/facebookresearch/faiss) library with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/). Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255.35.37:8080/),  [iSMART](https://github.com/s175573/iSMART) and [tcrdist](https://github.com/kmayerb/tcrdist3)), clusTCR show comparable clustering quality, but provides a steep increase in speed and scalability. Using a standard laptop, clusTCR can cluster 1 million CDR3 sequences in under 5 minutes (Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz, using 8 CPUs).
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+<p align="center">
+  <img src="img/workflow.png" alt="drawing" width="800"/>
+</p>
 
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/MaxVanHoucke/JsonMax/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
