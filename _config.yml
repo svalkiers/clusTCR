@@ -1,5 +1,5 @@
-remote_theme: pmarsceill/just-the-docs
-
+theme: "just-the-docs"
+baseurl: "/"
 aux_links:
   "clusTCR on GitHub":
     - "//github.com/svalkiers/clustcr"
