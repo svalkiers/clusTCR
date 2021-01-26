@@ -15,13 +15,41 @@ from .datasets import vdj_cdr3_small, vdj_epitopes_small
 
 
 def test_cdr3():
+    """
+    Small data set consisting of 2851 unique CDR3 sequences, curated from a
+    subset of the VDJdb.
+    This data can be used for testing and benchmarking.
+    """
     return vdj_cdr3_small()
 
 def test_epitope():
+    """
+    Epitope data corresponding to the sequences in test_cdr3().
+    This data can be used for testing and benchmarking.
+    """
     return vdj_epitopes_small()
     
 
 class Clustering:
+    """
+    The Clustering class offers flexible functionality for clustering of
+    (large) sets of CDR3 amino acid sequences. The default clustering method
+    of clusTCR is a two-step procedure that applies the faiss library to
+    prune the search space and create superclusters. MCL is subsequently
+    applied to identify specificity groups in each supercluster. This two-step
+    clustering combination results in a fast and accurate way of grouping large
+    data sets of CDR3 sequences into specificity groups.
+    
+    The Clustering module currently provides the following clustering methods:
+        - MCL: Markov Clustering Algorithm. Accurate clustering method, 
+        which is recommended for data sets containing < 50,000 sequences.
+        - FAISS: This method provides extremely rapid clustering of sequences
+        through dense vector representations. This method is far less accurate.
+        This method also provides GPU support.
+        - TWOSTEP: Combines the first two methods for a fast and accurate
+        clustering method. This method provides both CPU multiprocessing,
+        as well as GPU support.
+    """
     
     def __init__(self, 
                  cdr3: pd.Series, 
@@ -30,8 +58,6 @@ class Clustering:
                  gpu_enabled = False):
         
         """
-        Flexible method for clustering of large sets of TCR sequences.
-
         Parameters
         ----------
         cdr3 : pd.Series
@@ -67,13 +93,30 @@ class Clustering:
 
 
     def MCL(self, edgelist = None, mcl_hyper=[1.2,2], outfile=None):
-    
-        '''
-        Perform clustering on a network of CDR3 amino acid sequences with a known hamming distance,
-        using the Markov clustering (MCL) algorithm. For more info about the inflation and expansion
-        parameters, visit: https://micans.org/mcl/
-        '''
+        """
+        Perform clustering on a network of CDR3 amino acid sequences with 
+        a known hamming distance, using the Markov clustering (MCL) algorithm. 
+        For more info about the inflation and expansion parameters, 
+        visit: https://micans.org/mcl/
         
+
+        Parameters
+        ----------
+        edgelist : set, optional
+            Tab-separated edgelist. The default is None.
+        mcl_hyper : list, optional
+            MCL hyperparameters: inflation and expansion. 
+            The default is [1.2,2].
+        outfile : str, optional
+            Name of outfile. The default is None.
+
+        Returns
+        -------
+        clusters : pd.DataFrame
+            pd.DataFrame containing two columns: 'CDR3' and 'cluster'.
+            The first column contains CDR3 sequences, the second column
+            contains the corresponding cluster ids.
+        """
         if edgelist is None:
             edgelist = create_edgelist(self.cdr3)
         else:
@@ -84,50 +127,81 @@ class Clustering:
         
         # Run MC
         result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
-        clusters = mcl.get_clusters(result)
+        mcl_output = mcl.get_clusters(result)
         identifiers = list(G.nodes())
         
         # Map cluster ids back to seqs
         cluster_ids = dict()
-        for i in range(len(clusters)):
-            cluster_ids[i] = list(identifiers[i] for i in clusters[i])
+        for i in range(len(mcl_output)):
+            cluster_ids[i] = list(identifiers[i] for i in mcl_output[i])
             
         # Generate nodelist
-        nodelist = {"CDR3":[], "cluster":[]}
+        clusters = {"CDR3":[], "cluster":[]}
         for c in cluster_ids:
             for seq in cluster_ids[c]:
-                nodelist["CDR3"].append(seq)
-                nodelist["cluster"].append(c)
-        nodelist = pd.DataFrame(data=nodelist)
+                clusters["CDR3"].append(seq)
+                clusters["cluster"].append(c)
+        clusters = pd.DataFrame(data=clusters)
         
         # Write to file
         if outfile is not None:
-            nodelist.to_csv(outfile, sep="\t", index=False)
+            clusters.to_csv(outfile, sep="\t", index=False)
             
-        return nodelist
+        return clusters
     
     
     
-    def FAISS(self, cluster_size = 10):
-        
-        nodelist = {"CDR3":[], "cluster":[]}
-        clusters = FaissClustering.cluster(self.cdr3, avg_items_per_cluster = cluster_size)
-        for cluster in clusters:
-            nodelist["CDR3"].append(cluster)
-            nodelist["CDR3"].append(len(nodelist["cluster"]))
+    def FAISS(self, cluster_size = 5000):
+        """
+        FAISS clustering method
+
+        Parameters
+        ----------
+        cluster_size : TYPE, optional
+            DESCRIPTION. The default is 5000.
+
+        Returns
+        -------
+        clusters : pd.DataFrame
+            pd.DataFrame containing two columns: 'CDR3' and 'cluster'.
+            The first column contains CDR3 sequences, the second column
+            contains the corresponding cluster ids.
+        """
+        clusters = {"CDR3":[], "cluster":[]}
+        faiss_output = FaissClustering.cluster(self.cdr3.reset_index(drop = True), 
+                                               avg_items_per_cluster = cluster_size,
+                                               use_gpu = self.gpu)
+        for cluster in faiss_output:
+            clusters["CDR3"].append(cluster)
+            clusters["CDR3"].append(len(clusters["cluster"]))
             
-        return nodelist
+        return pd.DataFrame(clusters)
     
     
-    def TWOSTEP(self, size_of_preclusters = 5000):
-        '''
-        Two-step clustering procedure that combines the speed of the faiss method
-        with the accuracy of MCL.
-        '''
+    
+    def TWOSTEP(self, supercluster_size = 5000):
+        """
+        Two-step clustering procedure for speeding up CDR3 clustering by
+        pre-sorting sequences into superclusters. A second clustering step
+        is performed on each individual supercluster.
+
+        Parameters
+        ----------
+        supercluster_size : int, optional
+            Approximate number of sequences in each supercluster. 
+            The default is 5000.
+
+        Returns
+        -------
+        nodelist : pd.DataFrame
+            pd.DataFrame containing two columns: 'CDR3' and 'cluster'.
+            The first column contains CDR3 sequences, the second column
+            contains the corresponding cluster ids.
+        """
         
         # Pre-sorting sequences using faiss
         preclust = FaissClustering.cluster(self.cdr3.reset_index(drop = True), 
-                                           avg_items_per_cluster = size_of_preclusters, 
+                                           avg_items_per_cluster = supercluster_size, 
                                            use_gpu = self.gpu)
         
         if self.n_cpus > 1:
@@ -188,6 +262,20 @@ class Clustering:
     
     
     def get_clusters(self, mcl_params=[1.2,2]):
+        """
+        Function that calls the indicated clustering method and returns clusters
+        in a nodelist format.
+        
+        Parameters
+        ----------
+        mcl_params : list, optional
+            Hyperparameters of MCL. The default is [1.2,2].
+
+        Returns
+        -------
+        nodelist : TYPE
+            Table containing sequences and their corresponding cluster ids.
+        """
         
         if self.method == 'MCL':
             nodelist = self.MCL(mcl_hyper=mcl_params)
@@ -211,11 +299,11 @@ class Features:
 
 
     def calc_variation(self, correction="log"):
-        '''
+        """
         Correction factors:
             - log: 1/log2(n) correction (better for smaller clusters)
             - ssc: small-sample correction (typically used in motif logo construction)
-        '''
+        """
         
         # Correction factors
         cfactors = ["log", "ssc"]
@@ -272,13 +360,13 @@ class Features:
 
     
     def calc_physchem(self):
-        '''
+        """
         Calculate the average physicochemical properties for a CDR3 amino acid sequence.
         Takes a nodelist as input. This can be calculated with the network_clustering() function.
         
         To add a physicochemical property, add a dictionary containing the values for each AA,
         also add physicochemical property to the "physchem_properties" dictionary.
-        '''
+        """
         physchem_properties = PHYSCHEM
 
         properties = []
@@ -297,10 +385,10 @@ class Features:
     
     
     def calc_pgen(self):
-        '''
-        NOTE: this method requires the Python 3 fork of OLGA (https://github.com/dhmay/OLGA)!
-        By default, OLGA is installed within this repo.
-        '''
+        """
+        Calculate the average generation probability of a cluster.
+        PGEN calculations are based on the OLGA module.
+        """
         
         print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
         user_input = input("Confirm: [Y/N] ")
@@ -338,12 +426,18 @@ class Features:
         
     
     def combine(self, *args):
+        """
+        Combine cluster features into one pd.DataFrame.
+        """
         return pd.concat([*args], axis=1)
     
     
     
     def clustermotif(self):
-        
+        """
+        Calculate a consensus motif representation for a set of sequence
+        based on the profile matrix.
+        """
         clustermotifs = dict()
         for i in self.clusterids:
             sequences = self.nodes[self.nodes['cluster'] == i]['CDR3'].tolist()
@@ -376,9 +470,9 @@ class Metrics:
     
     
     def calc_confmat(self):
-        '''
+        """
         Construct confusion matrices for true and baseline.
-        '''
+        """
         self.gt["count"] = 1
         self.gt_baseline["count"] = 1
         conf_mat_t = pd.pivot_table(self.gt,values='count',
@@ -423,7 +517,10 @@ class Metrics:
     
     
     def purity_90(self, conf_mat=None):
-        
+        """
+        Method that determines the fraction of clusters that have
+        a purity greater than .90
+        """
         if conf_mat is None:
             conf_mat = self.calc_confmat()
         
@@ -443,10 +540,10 @@ class Metrics:
     
     
     def consistency(self, conf_mat=None):
-        '''
+        """
         Method that pretends that we solved a supervised problem where each cluster corresponds to a single epitope.
         Returns the accuracy of the best solution.
-        '''
+        """
         
         if conf_mat is None:
             conf_mat = self.calc_confmat()
@@ -467,6 +564,22 @@ class Metrics:
     
 
     def summary(self, conf_mat=None):
+        """
+        Calculates all available clustering metrics and outputs them as
+        a pd.DataFrame.
+
+        Parameters
+        ----------
+        conf_mat : np.array, optional
+            Confusion matrix. This is automatically calculated if not provided.
+
+        Returns
+        -------
+        summ : pd.DataFrame
+            Summary of clustering metrics.
+
+        """
+        
         summ = pd.DataFrame({'actual':[self.retention(), 
                                        self.purity(conf_mat)[0], 
                                        self.purity_90(conf_mat)[0],
