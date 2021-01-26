@@ -1,7 +1,0 @@
-[report]
-omit =
-    setup.py
-    clustcr/__main__.py
-    clustcr/_version.py
-    versioneer.py
-    tests/*
