@@ -1,0 +1,17 @@
+package:
+  name: clustcr
+  version: 1
+
+source:
+  path: src
+
+test:
+  imports:
+    - clustcr
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
