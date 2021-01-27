@@ -5,7 +5,7 @@ import pickle
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 
-from clusTCR import Features, Metrics
+from src.clusTCR.clustering.clusTCR import Features, Metrics
 from toolkit.tools import principal_component_analysis, data_to_ml_format, stratified_cross_validation
 
 class FeatureGenerator:

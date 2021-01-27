@@ -4,7 +4,7 @@ import os
 import random
 
 from .import_functions import path_in_data, imgt_v_genes
-from tcrdist.adpt_funcs import adaptive_to_imgt
+# from tcrdist.adpt_funcs import adaptive_to_imgt
 
 
 def parse_immuneACCESS(filename, separator = '\t'):
@@ -40,9 +40,9 @@ def parse_immuneACCESS(filename, separator = '\t'):
                   inplace = True)
     
     # Convert Adaptive to IMGT nomenclature
-    df['V'] = df['V'].apply(lambda x : adaptive_to_imgt['human'].get(x))
-    v_db = imgt_v_genes()
-    df = df[df['V'].isin(v_db)]
+    # df['V'] = df['V'].apply(lambda x : adaptive_to_imgt['human'].get(x))
+    # v_db = imgt_v_genes()
+    # df = df[df['V'].isin(v_db)]
     
     df.drop_duplicates(inplace = True)
     df['subject'] = [filename.split('/')[-1].replace('.tsv', '')] * len(df)
