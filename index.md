@@ -30,7 +30,7 @@ Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255
 To install clusTCR on Linux or OSX, simply use conda.
 
 ```
-conda install -c maxvanhoucke clustcr
+conda install clustcr -c maxvanhoucke -c bioconda -c pytorch -c conda-forge
 ```
 
 You're good to go!
