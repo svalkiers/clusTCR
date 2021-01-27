@@ -1,7 +1,6 @@
 import pandas as pd
 import multiprocessing
 
-
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from src.clusTCR.modules.faiss_clustering import FaissClustering
 from .metrics import Metrics
@@ -99,9 +98,10 @@ class Clustering:
         faiss_output = FaissClustering.cluster(cdr3.reset_index(drop=True),
                                                avg_items_per_cluster=self.faiss_cluster_size,
                                                use_gpu=self.use_gpu)
-        for cluster in faiss_output.get_cluster_contents():
-            clusters["CDR3"].append(cluster)
-            clusters["CDR3"].append(len(clusters["cluster"]))
+        for i, cluster in enumerate(faiss_output.get_cluster_contents()):
+            for seq in cluster:
+                clusters["CDR3"].append(seq)
+                clusters["cluster"].append(i)
 
         return pd.DataFrame(clusters)
 
