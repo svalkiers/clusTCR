@@ -1,3 +1,6 @@
 _site/
 .sass-cache/
 .idea
+build/
+clusTCR.egg-info/
+dist/
