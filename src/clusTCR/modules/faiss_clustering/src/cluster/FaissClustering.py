@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import faiss
 
@@ -39,6 +38,10 @@ class FaissClustering:
                                         items_per_cluster=avg_items_per_cluster,
                                         ids=data.keys().to_numpy(),
                                         use_gpu=use_gpu)
+        if use_gpu:
+            print('Converting GPU index to CPU index')
+            # noinspection PyUnresolvedReferences
+            clustering = faiss.index_gpu_to_cpu(clustering)
         return FaissClustering(clustering, data)
 
     def __init__(self, index, data):
