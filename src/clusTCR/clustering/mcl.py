@@ -62,6 +62,10 @@ def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     return clusters
 
 
+def MCL_multi(edgelist, cdr3):
+    return MCL(cdr3, edgelist)
+
+
 def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     # Pool multiple processes for parallelization using multiple cpus.
     clusters = []
@@ -83,9 +87,9 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
         del edges[index]
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
-        nodelist = parmap.map(MCL,
-                              cdr3,
+        nodelist = parmap.map(MCL_multi,
                               edges,
+                              cdr3,
                               pm_parallel=True,
                               pm_pool=pool)
         nodelist += clusters
