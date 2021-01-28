@@ -1,5 +1,6 @@
 from .import_vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdj_to_tcrdist, vdjdb_to_epitopedata
 from .import_immuneaccess import construct_metarepertoire, immuneACCESS_to_cdr3list
+from .import_functions import path_in_data
 
 vdjdb_location = 'vdjdb/vdjdb_trb.tsv'
 
@@ -52,5 +53,5 @@ def metarepertoire_tcrdist(directory, n_sequences = 10**6):
     metarepertoire = construct_metarepertoire(directory, n_sequences = n_sequences)
     return metarepertoire.rename(columns = {'CDR3':'cdr3_b_aa', 'V':'v_b_gene'})
 
-def metarepertoire_cdr3(directory, n_sequences = 10**6):
+def metarepertoire_cdr3(n_sequences = 10**6, directory=path_in_data('immuneACCESS')):
     return construct_metarepertoire(directory, n_sequences = n_sequences).CDR3

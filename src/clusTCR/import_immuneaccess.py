@@ -2,6 +2,7 @@ import pandas as pd
 import sys
 import os
 import random
+from os.path import join
 
 from .import_functions import path_in_data, imgt_v_genes
 from tcrdist.adpt_funcs import adaptive_to_imgt
@@ -60,11 +61,11 @@ def immuneACCESS_to_cdr3list(filename):
 def construct_metarepertoire(directory, n_sequences = 10**6):
 
     folder = path_in_data(directory)
-    meta = parse_immuneACCESS(folder + random.choice(os.listdir(folder)))
+    meta = parse_immuneACCESS(join(folder, random.choice(os.listdir(folder))))
     meta.drop_duplicates(inplace = True)
     
     while len(meta) <= n_sequences:
-        rep = parse_immuneACCESS(folder + random.choice(os.listdir(folder)))
+        rep = parse_immuneACCESS(join(folder, random.choice(os.listdir(folder))))
         meta = pd.concat([meta, rep])
         meta.drop_duplicates(inplace = True)
         
