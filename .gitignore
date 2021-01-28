@@ -4,3 +4,7 @@
 *.aux
 *.log
 *.pyc
+
+build/
+clusTCR.egg-info
+dist/

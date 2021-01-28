@@ -17,7 +17,7 @@ To install *clusTCR*, navigate to the folder in which you want to install the so
 $ git clone https://github.com/svalkiers/clusTCR
 ```
 
-Next, you can directly install all the necessary dependencies by creating a new conda environment from the [env.yml](env.yml) file.
+Next, you can directly install all the necessary dependencies by creating a new conda environment from the [env.yml](conda.recipe/env.yml) file.
 
 ```shell
 $ conda env create -f env.yml
