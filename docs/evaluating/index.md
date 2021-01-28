@@ -10,8 +10,8 @@ nav_order: 4
 If you have epitope data available, you can evaluate the quality of the clustering output using the `Metrics` module. Therefore, start by importing epitope data corresponding to the clustered CDR3 sequences. *clusTCR* contains a data set of epitope targets corresponding to the sequences used in the previous section. The epitope data should always have the following structure: two tab-separated columns with headers `['CDR3', 'Epitope']`.
 
 ```python
-from clusTCR import test_epitope
-epitope = test_epitope() # Epitope data corresponding to CDR3 sequences
+from clustcr import datasets
+epitope = datasets.test_epitope() # Epitope data corresponding to CDR3 sequences
 ```
 
 Currently, *clusTCR* provides the following metrics for cluster evaluation:
@@ -20,13 +20,16 @@ Currently, *clusTCR* provides the following metrics for cluster evaluation:
 - **Purity**: Fraction of sequences within a cluster targeting the same epitope.
 - **Consistency**: Fraction of sequences targeting the same epitope that are assigned to the same cluster.
 
-```python
-from clusTCR import Metrics
+The metrics can be accessed via the result of a clustering
 
-metrics = Metrics(output, epitope) # Provide clustering output and epitope data
-retention = metrics.retention()
-purity = metrics.purity()
+```python
+from clustrc import Clustering
+output = Clustering().fit(datasets.test_cdr3())
+metrics = output.metrics(epitope)
+
 consistency = metrics.consistency()
+purity = metrics.purity()
+retention = metrics.retention()
 ```
 
 Printing these variables will show the resulting values for each metric. By default, the results are compared to the baseline. To generate this baseline, the cluster column of the clustering output is randomly permuted as to mimic a clustering algorithm that performs random clustering.
