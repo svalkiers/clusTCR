@@ -3,6 +3,24 @@ from .import_immuneaccess import construct_metarepertoire, immuneACCESS_to_cdr3l
 
 vdjdb_location = 'vdjdb/vdjdb_trb.tsv'
 
+
+def test_cdr3():
+    """
+    Small data set consisting of 2851 unique CDR3 sequences, curated from a
+    subset of the VDJdb.
+    This data can be used for testing and benchmarking.
+    """
+    return vdj_cdr3_small()
+
+
+def test_epitope():
+    """
+    Epitope data corresponding to the sequences in test_cdr3().
+    This data can be used for testing and benchmarking.
+    """
+    return vdj_epitopes_small()
+
+
 def vdj_cdr3():
     return vdjdb_to_cdr3list(vdjdb_location)
 
