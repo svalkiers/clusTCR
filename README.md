@@ -12,7 +12,7 @@ Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255
 </p>
 
 
-## [Documentation](https://svalkiers.github.io/clusTCR/)
+## [Documentation](https://svalkiers.github.io/clusTCR/) & Install
 
 All of our documentation, installation info and examples can be found in the above link!
 To get you started, here's how to install clusTCR
