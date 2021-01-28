@@ -3,7 +3,7 @@ import networkx as nx
 import markov_clustering as mcl
 import parmap
 import multiprocessing
-from src.clusTCR.tools import create_edgelist
+from clustcr.tools import create_edgelist
 
 
 def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):

@@ -2,7 +2,7 @@ import pandas as pd
 import multiprocessing
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
-from src.clusTCR.modules.faiss_clustering import FaissClustering
+from clustcr.modules.faiss_clustering import FaissClustering
 from .metrics import Metrics
 
 
