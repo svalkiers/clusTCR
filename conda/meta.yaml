@@ -1,0 +1,34 @@
+{% set py_data = load_setup_py_data() %}
+
+package:
+  name: clustcr
+  version: {{ py_data['version'] }}
+
+source:
+  path: ..
+
+build:
+  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed -vv .
+  noarch: python
+  
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    # dependencies are defined in setup.py
+    {% for dep in py_data['install_requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+
+test:
+  imports:
+    - clustcr
+
+about:
+  home: https://github.com/svalkiers/clustcr
+  summary: a python interface for rapid clustering of large sets of CDR3 sequences
+  license: {{ py_data.get('license') }}
+  license_file: LICENSE
