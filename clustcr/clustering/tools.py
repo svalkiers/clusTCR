@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import auc, plot_roc_curve
 
-from .amino_acid import AALPHABET
+from clustcr.chem_properties import AALPHABET
 
 
 def create_edgelist(cdr3):

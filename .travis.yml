@@ -2,7 +2,6 @@
 
 language: python
 python:
-  - "2.7"
   - "3.6"
 
 install:
@@ -18,7 +17,7 @@ install:
   - conda update -q conda
   - conda install conda-build anaconda-client pytest pytest-cov
   - conda config --set auto_update_conda no
-  - conda build conda.recipe --no-test
+  - conda build conda/ --no-test
   - conda install --use-local clustcr
   - conda info -a
 script:

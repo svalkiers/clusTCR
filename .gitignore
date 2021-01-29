@@ -8,3 +8,5 @@
 build/
 clusTCR.egg-info
 dist/
+
+.ipynb_checkpoints
