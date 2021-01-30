@@ -9,7 +9,6 @@ requirements = [
     'markov_clustering',
     'pyteomics',
     'parmap',
-    'faiss'
     # 'tcrdist3'
     # package requirements go here
 ]
