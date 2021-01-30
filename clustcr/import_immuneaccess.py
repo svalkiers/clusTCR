@@ -24,9 +24,9 @@ def parse_immuneACCESS(filename, separator = '\t'):
         df = pd.read_csv(filename, sep = separator)
         df = df[df['frame_type'] == 'In']
         df = df[['amino_acid', 'v_gene', 'productive_frequency']]
-        # df = df[df['vGeneName'] != 'unresolved']
+        df = df[df['vGeneName'] != 'unresolved']
         df.rename(columns = {'amino_acid' : 'CDR3',
-                             # 'v_gene' : 'V',
+                             'v_gene' : 'V',
                              'productive_frequency' : 'count'},
                   inplace = True)
     
@@ -40,13 +40,13 @@ def parse_immuneACCESS(filename, separator = '\t'):
                   inplace = True)
     
     # Convert Adaptive to IMGT nomenclature
-    # df['V'] = df['V'].apply(lambda x : adaptive_to_imgt_human.get(x))
-    # v_db = imgt_v_genes()
-    # df = df[df['V'].isin(v_db)]
+    df['V'] = df['V'].apply(lambda x : adaptive_to_imgt_human.get(x))
+    v_db = imgt_v_genes()
+    df = df[df['V'].isin(v_db)]
     
     df.drop_duplicates(inplace = True)
     df['subject'] = [filename.split('/')[-1].replace('.tsv', '')] * len(df)
-    # df['count'] = df['count'] / 100
+    df['count'] = df['count'] / 100
     
     return df
 
@@ -60,11 +60,11 @@ def immuneACCESS_to_cdr3list(filename):
 def construct_metarepertoire(directory, n_sequences = 10**6):
 
     folder = path_in_data(directory)
-    meta = parse_immuneACCESS(folder + '/' + random.choice(os.listdir(folder)))
+    meta = parse_immuneACCESS(folder + random.choice(os.listdir(folder)))
     meta.drop_duplicates(inplace = True)
     
     while len(meta) <= n_sequences:
-        rep = parse_immuneACCESS(folder + '/' +random.choice(os.listdir(folder)))
+        rep = parse_immuneACCESS(folder + random.choice(os.listdir(folder)))
         meta = pd.concat([meta, rep])
         meta.drop_duplicates(inplace = True)
         
