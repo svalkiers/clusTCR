@@ -20,7 +20,7 @@ Any parameters should be passed to the `Clustering` object at creation, the foll
 
 | parameter | explanation | default |
 |:-------------|:------------------|:------|
-| method |  *mcl*, *faiss* or *two-step*. <br> We recommend using *mcl* for data sets containing < 50,000 CDR3 sequences, and *two-step* for all data sets with > 50,000 sequences. For more information check out their respective pages. | two-step  |
+| method |  *mcl*, *faiss* or *two-step*. <br> We recommend using *mcl* for data sets containing < 50,000 CDR3 sequences, and *two-step* for all data sets with > 50,000 sequences. For more information check out the [methods page](methods). | two-step  |
 | n_cpus | Number of CPUs used in the MCL clustering. This drastically increases the speed of *clusTCR*. When set to -1, all of your CPUs will be used. | -1 (all)  |
 | faiss_cluster_size | The size of the clusters that faiss will generate, either using the faiss or the two-step method. | 5000 |
 | mcl_params | MCL Hyperparameters, which should be a list of \[inflation, expansion\] | \[1.2, 2\]  |
