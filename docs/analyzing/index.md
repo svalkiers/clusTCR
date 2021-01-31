@@ -53,10 +53,10 @@ feature_generator.perform_PCA(features)
 ```
 
 <p align="center">
-    <img src="results/figures/cluster_features_PCA.png" alt="drawing" width="500"/>
+    <img src="cluster_features_PCA.png" alt="drawing" width="500"/>
 </p>
 
-The PCA plot is saved under [figures](results/figures/) in the results folder.
+The PCA plot is saved under figures in the results folder.
 
 #### Analyzing quality of clusters without known epitopes
 
@@ -97,5 +97,5 @@ model_training.evaluate_model()
 ```
 
 <p align="center">
-    <img src="results/figures/cluster_quality_ROC.png" alt="drawing" width="500"/>
+    <img src="cluster_quality_ROC.png" alt="drawing" width="500"/>
 </p>
