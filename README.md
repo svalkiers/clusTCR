@@ -32,11 +32,11 @@ $ conda env create -f conda/env.yml
 ```
 
 To build a new conda package, use conda build as follows. 
-Mind that the correct channels (pytorch, bioconda & conda-forge) should be added first or be incorporated in the command.
+Mind that the correct channels (pytorch, bioconda & conda-forge) should be added first or be incorporated in the commands.
 
-```
-$ conda build conda/
-```
+- clustcr `$ conda build conda/clustcr/`
+- clustcr-gpu `$ conda build conda/clustcr-gpu/`
+
 
 
 
