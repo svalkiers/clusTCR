@@ -3,12 +3,12 @@ import pickle
 import matplotlib.pyplot as plt 
  
 from clustcr.analysis.tools import principal_component_analysis, stratified_cross_validation 
-from clustcr.analysis.feature_generator import Features 
+from clustcr.analysis.features import FeatureGenerator 
 from sklearn.preprocessing import StandardScaler 
 from sklearn.ensemble import RandomForestClassifier 
  
  
-class cluster_analysis: 
+class ClusterAnalysis: 
      
     def __init__(self, features): 
         self.features = features 
@@ -26,7 +26,7 @@ class cluster_analysis:
         principal_component_analysis(X, labels, number_of_components) 
          
      
-    def _predict_quality(features : np.array, model = None): 
+    def _predict_quality(self, model = None): 
         """ 
         Predict clustering quality from a set of clustering features. 
         A pre-trained, default model is provides, but customization is possible. 
@@ -49,15 +49,18 @@ class cluster_analysis:
          
         if model is None: 
             with open('./cq_classifier.pkl', 'rb') as f: 
-                model = pickle.load(f) 
+                model = pickle.load(f)
+        else:
+            with open(model, 'rb') as f:
+                model = pickle.load(f)
              
-        X = StandardScaler().fit_transform(features) 
+        X = StandardScaler().fit_transform(self.features) 
         predictions = model.predict(X) 
          
         return predictions 
      
  
-class train_model: 
+class TrainModel: 
      
     def __init__(self, clusters, epitope_data, features=None): 
          
@@ -67,11 +70,11 @@ class train_model:
         if features is not None: 
             self.features = features 
         else: 
-            f = Features(self.clusters) 
+            f = FeatureGenerator(self.clusters) 
             self.features = f.compute_features() 
          
          
-    def fit(self): 
+    def _fit(self): 
      
         data = self.prep_data_for_ML() 
          
@@ -86,7 +89,7 @@ class train_model:
         return classifier.fit(X, y) 
      
      
-    def evaluate(self): 
+    def _evaluate(self): 
          
         data = self.prep_data_for_ML() 
          
@@ -115,3 +118,7 @@ class train_model:
         plt.legend(by_label.values(), by_label.keys(), fontsize=25) 
         fig.savefig("../results/figures/cluster_quality_ROC.pdf", format='pdf', dpi=1200) 
         plt.show()
+
+    
+    def _save(self, model, filename):
+        pickle.dump(model, open(filename, 'wb'))

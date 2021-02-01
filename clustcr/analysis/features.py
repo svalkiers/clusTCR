@@ -7,7 +7,7 @@ from ..modules.olga import generation_probability as pgen
 
 from .tools import profile_matrix, motif_from_profile
 
-class Features:
+class FeatureGenerator:
     # Calculate features for clusters
     def __init__(self, nodes):
         self.nodes = nodes
