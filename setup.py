@@ -10,7 +10,6 @@ requirements = [
     'markov_clustering',
     'pyteomics',
     'parmap',
-    'faiss'
     # 'tcrdist3'
 ]
 
