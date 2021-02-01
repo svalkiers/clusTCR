@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import versioneer
 
+# conda package requirements
 requirements = [
     'numpy',
     'pandas',
@@ -9,23 +10,21 @@ requirements = [
     'markov_clustering',
     'pyteomics',
     'parmap',
-    'faiss'
     # 'tcrdist3'
-    # package requirements go here
 ]
 
 setup(
     name='clusTCR',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description="tcr clustering",
+    description="a Python interface for rapid clustering of large sets of CDR3 sequences",
     license="MIT",
     author="Sebastiaan Valkiers & Max Van Houcke",
     author_email='sebastiaan.valkiers@uantwerpen.be',
     url='https://github.com/svalkiers/clustcr',
-    packages=find_packages(exclude=('analyses')),
+    packages=find_packages(exclude=('analysis',)),
     package_data={
-        'clustcr': ['../data/*', '../data/*/*']
+        'clustcr': ['../data/*', '../data/*/*', 'input/adaptive_imgt_mapping.csv']
     },
     include_package_data=True,
     install_requires=requirements,

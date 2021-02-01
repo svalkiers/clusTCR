@@ -2,41 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from clustcr.chem_properties import AALPHABET
+from clustcr.clustering.metrics import Metrics
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import auc, plot_roc_curve
-
-from .amino_acid import AALPHABET
-
-
-def create_edgelist(cdr3):
-    '''
-    Create tab-separated edgelist of edges with HD = 1, from a set of sequences.    
-    '''
-    # Set makes sure there are no dupes
-    cdr3 = set(cdr3)
-    
-    # Hashing
-    cdr3hash = dict()
-    for cdr in cdr3:
-        for hash in (cdr[::2], cdr[1::2]):
-            if hash not in cdr3hash:
-                cdr3hash[hash] = set()
-            cdr3hash[hash].add(cdr)
-            
-    # Generate network
-    edgelist = set()
-    for hash in cdr3hash:
-        if len(cdr3hash[hash]) >= 1:
-            for cdr1 in cdr3hash[hash]:
-                for cdr2 in cdr3hash[hash]:
-                    if cdr1 != cdr2:
-                        if cdr1 <= cdr2:
-                            if sum(ch1 != ch2 for ch1, ch2 in zip(cdr1, cdr2)) <= 1:
-                                edgelist.add(cdr1 + "\t" + cdr2)
-
-    return edgelist
 
 
 def profile_matrix(sequences : list):
@@ -108,9 +79,13 @@ def principal_component_analysis(features, labels, n_comp):
     scalex = 1.0/(xs.max() - xs.min())
     scaley = 1.0/(ys.max() - ys.min())
     plt.scatter(xs * scalex,ys * scaley, c='black')
+    
+    # Plot loadings
     for i in range(n):
         ax.arrow(0, 0, coeff[i,0], coeff[i,1],color = 'r',alpha = 0.5)
         ax.text(coeff[i,0]* 1.15, coeff[i,1] * 1.15, labels[i], color = 'g', ha = 'center', va = 'center', fontsize=12)
+    
+    # Styling
     var_expl = pca.explained_variance_ratio_
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
@@ -118,26 +93,61 @@ def principal_component_analysis(features, labels, n_comp):
     ax.set_ylabel("PC2 ({}%)".format(np.round(var_expl[1], 3) * 100), fontsize=12)
     ax.set_title("PCA loadings (PC 1 and PC 2)", fontsize=16)
     ax.grid()
+    
+    # Save figure and show output
     fig.savefig("../results/figures/cluster_features_PCA.pdf", format='pdf', dpi=1200)
     plt.show()
     
     
-def data_to_ml_format(features, actual_labels, permuted_labels, cluster_size):
+
+def generate_labels(clusters, epitope_data):
+        
+    metrics = Metrics(clusters, epitope_data)
+    cm = metrics.calc_confmat()[0]
+    
+    labels = [cm[i].max() / np.sum(cm[i]) for i in cm]
+    
+    return labels
+
+
+def data_to_ml_format(features, labels, cluster_size):
     
     X = np.array(features)
     
-    y = np.array([actual_labels, permuted_labels]).T # Actual and permuted purities
+    y = np.asarray(labels) # Actual and permuted purities
     d = np.append(X, y, axis = 1) # Append targets to features
     d = d[d[:,1] >= cluster_size] # Filter on cluster size
     d = d[~np.isnan(d).any(axis=1)] # Remove nan values from array
 
-    X = d[:,:-2] # Isolate features
+    X = d[:,:-1] # Isolate features
     X = StandardScaler().fit_transform(X) # Scale features
     
-    y_a = np.array(d[:,-2]) # Actual purities
-    y_p = np.array(d[:,-1]) # Permuted purities
+    y = np.array(d[:,-1]) # Actual purities
     
-    return X, y_a, y_p
+    return X, y
+
+    
+def prep_data_for_ML(features, labels = None, c = .9, s = 3):
+    '''
+    Generate binary labels from cluster purities. These labels represent:
+        - 1 ~ GOOD PURITY
+        - 0 ~ BAD PURITY
+    
+    c : value that defines the cutoff between good and bad purity.
+    s : minimum allowed cluster size.
+    '''
+    
+    if labels is None:
+        labels = generate_labels()
+
+    for a in labels:
+        # Actual clusters
+        if a[1] >= c:
+            labels[a[0]] = 1 # Good
+        else:
+            labels[a[0]] = 0 # Bad
+            
+    return data_to_ml_format(features, labels, s)
 
 
 def stratified_cross_validation(model, X, y, n_folds = 10):
