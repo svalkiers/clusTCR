@@ -354,7 +354,7 @@ def PreCalculateVgeneDist(VgeneFa="Imgt_Human_TRBV.fasta"):
             score2=SeqComparison(s2_CDR2,s2_CDR2)
             #print score1+score2
             VScore[(V1,V2)]=score1+score2
-    gg=open('VgeneScores.txt','w')
+    gg=open('VgeneScores.txt', 'w')
     for kk in VScore:
         vv=VScore[kk]
         line=kk[0]+'\t'+kk[1]+'\t'+str(vv)+'\n'
@@ -657,7 +657,7 @@ def main():
                     files.append(ff.strip())
     VFa=opt.VFa
     PreCalculateVgeneDist(VFa)
-    vf=open('./VgeneScores.txt')  ## Use tcrDist's Vgene 80-score calculation
+    vf=open('VgeneScores.txt')  ## Use tcrDist's Vgene 80-score calculation
     VScore={}
     VV=opt.V
     if VV:

@@ -1,4 +1,4 @@
-# TCR Clustering
+# Faiss TCR Clustering
 
 This library aims to do a fast clustering of T-cell receptors using a combination of chemical properties as features.  
 It relies on the [faiss](https://github.com/facebookresearch/faiss/) library for clustering.
