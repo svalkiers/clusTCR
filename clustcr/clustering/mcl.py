@@ -70,13 +70,14 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     # Pool multiple processes for parallelization using multiple cpus.
     clusters = []
     idxs_to_remove = []
-    edges = [create_edgelist(c) for c in preclust.get_cluster_contents()]
+    cluster_contents = preclust.cluster_contents()
+    edges = [create_edgelist(c) for c in cluster_contents]
     # Clusters containing no edges with HD = 1 are isolated
     for val in edges:
         if len(val) == 0:
             idx = edges.index(val)
             idxs_to_remove.append(idx)
-            clust = preclust.get_cluster_contents()[idx]
+            clust = cluster_contents[idx]
             if len(clusters) == 0:
                 clusters.append(pd.DataFrame({'CDR3': clust,
                                               'cluster': [0] * len(clust)}))
@@ -104,7 +105,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
 
 def MCL_from_preclusters(cdr3, preclust):
     initiate = True
-    for c in preclust.get_cluster_contents():
+    for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c)
             if initiate:

@@ -1,5 +1,7 @@
 import pandas as pd
+import numpy as np
 import multiprocessing
+from typing import Union
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering
@@ -9,6 +11,9 @@ from .metrics import Metrics
 class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
+
+    def cluster_contents(self):
+        return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
 
     def metrics(self, epi):
         return Metrics(self.clusters_df, epi)
@@ -37,10 +42,12 @@ class Clustering:
 
     def __init__(self,
                  method='two-step',
-                 n_cpus=-1,
+                 n_cpus: Union[str, int] = 'all',
                  use_gpu=False,
                  faiss_cluster_size=5000,
-                 mcl_params=None):
+                 mcl_params=None,
+                 faiss_training_data=None,
+                 max_sequence_size=None):
 
         """
         Parameters
@@ -63,6 +70,8 @@ class Clustering:
         self.method = method.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
+        self.faiss_training_data = faiss_training_data
+        self.max_sequence_size = max_sequence_size
         self._set_n_cpus(n_cpus)
 
         available = ["MCL",
@@ -74,11 +83,10 @@ class Clustering:
         # Multiprocessing currently only available for Two-step method.
         # Use 1 cpu for other methods.
         if self.method != 'TWO-STEP' \
-                or n_cpus < -1 \
-                or n_cpus == 0 or \
-                n_cpus > multiprocessing.cpu_count():
+                or (isinstance(n_cpus, str) and n_cpus != 'all') \
+                or (isinstance(n_cpus, int) and (n_cpus < 1 or n_cpus > multiprocessing.cpu_count())):
             self.n_cpus = 1
-        elif n_cpus == -1:
+        elif n_cpus == 'all':
             self.n_cpus = multiprocessing.cpu_count()
         else:
             self.n_cpus = n_cpus
@@ -94,16 +102,21 @@ class Clustering:
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
-        clusters = {"CDR3": [], "cluster": []}
-        faiss_output = FaissClustering.cluster(cdr3.reset_index(drop=True),
-                                               avg_items_per_cluster=self.faiss_cluster_size,
-                                               use_gpu=self.use_gpu)
-        for i, cluster in enumerate(faiss_output.get_cluster_contents()):
-            for seq in cluster:
-                clusters["CDR3"].append(seq)
-                clusters["cluster"].append(i)
+        cdr3 = cdr3.reset_index(drop=True)
+        clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
+                                     use_gpu=self.use_gpu,
+                                     max_sequence_size=self.max_sequence_size)
+        if self.faiss_training_data:
+            clustering.train(self.faiss_training_data)
+        else:
+            clustering.train(cdr3)
 
-        return pd.DataFrame(clusters)
+        clusters = {"CDR3": [], "cluster": []}
+        for i, cluster in enumerate(clustering.cluster(cdr3)):
+            clusters["CDR3"].append(cdr3[i])
+            clusters["cluster"].append(int(cluster))
+
+        return ClusteringResult(pd.DataFrame(clusters))
 
     def _twostep(self, cdr3):
         """
@@ -113,9 +126,8 @@ class Clustering:
 
         Parameters
         ----------
-        supercluster_size : int, optional
-            Approximate number of sequences in each supercluster. 
-            The default is 5000.
+        cdr3 : pd.Series
+            Input data consisting of a list of CDR3 amino acid sequences.
 
         Returns
         -------
@@ -125,13 +137,11 @@ class Clustering:
             contains the corresponding cluster ids.
         """
 
-        super_clusters = FaissClustering.cluster(cdr3.reset_index(drop=True),
-                                                 avg_items_per_cluster=self.faiss_cluster_size,
-                                                 use_gpu=self.use_gpu)
+        super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus)
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
         else:
-            return MCL_from_preclusters(cdr3, super_clusters)
+            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
 
     def fit(self, cdr3: pd.Series):
         """
@@ -149,6 +159,6 @@ class Clustering:
         if self.method == 'MCL':
             return ClusteringResult(MCL(cdr3, mcl_hyper=self.mcl_params))
         elif self.method == 'FAISS':
-            return ClusteringResult(self._faiss(cdr3))
+            return self._faiss(cdr3)
         else:
-            return ClusteringResult(self._twostep(cdr3))
+            return self._twostep(cdr3)

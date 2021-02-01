@@ -1,6 +1,9 @@
-from clustcr import datasets
+from clustcr import Clustering, datasets
 
-cdr3 = datasets.metarepertoire_cdr3('/home/max/PycharmProjects/clusTCR/data/immuneACCESS', 100 * (10 ** 6))
-print(len(cdr3))
-cdr3.to_csv()
+cdr3 = datasets.test_cdr3()
+clustering = Clustering().fit(cdr3)
+print(clustering.clusters_df)
+
+
+
 
