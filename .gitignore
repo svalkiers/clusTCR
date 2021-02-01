@@ -10,3 +10,5 @@ clusTCR.egg-info
 dist/
 
 .ipynb_checkpoints
+.sass-cache/
+_site/
