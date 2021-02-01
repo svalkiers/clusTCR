@@ -8,7 +8,18 @@ from ..modules.olga import generation_probability as pgen
 from .tools import profile_matrix, motif_from_profile
 
 class FeatureGenerator:
-    # Calculate features for clusters
+    """
+    Compute feature matrix that provides a numerical representation of the
+    sequences within a cluster. The feature matrix can be used for exploration
+    of clustering results, and for downstream machine learning applications.
+    
+    Calculated features include:
+        - entropy
+        - size
+        - length of CDR3
+        - physicochemical features
+        - generation probability
+    """
     def __init__(self, nodes):
         self.nodes = nodes
         self.clusterids = nodes['cluster'].unique()
@@ -27,7 +38,7 @@ class FeatureGenerator:
         assert correction in cfactors, "Unknown correction factor '{}', please choose one of the following: {}.".format(correction, cfactors)
         
         # Results
-        res = {"ic":[], "size":[], "length":[]}
+        res = {"h":[], "size":[], "length":[]}
         
         # Calculate average information content per amino acid position in cluster
         for clust in self.nodes["cluster"].unique():
@@ -68,7 +79,7 @@ class FeatureGenerator:
                     elif correction == "ssc":
                         ic.append(np.log2(20) - (information_content + en))                        
                     
-            res["ic"].append(np.average(ic))
+            res["h"].append(np.average(ic))
             res["size"].append(n)
             res["length"].append(l)
         

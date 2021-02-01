@@ -8,16 +8,28 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier 
  
  
-class ClusterAnalysis: 
+class ClusterAnalysis:
+    """
+    Analysis module that can be used for the exploration of clustering results.
+    Analyses are based on cluster features, calculated using the FeatureGenerator.
+    ClusterAnalyses provides methods for performing PCA, and predicting
+    clustering quality.
+    """
      
     def __init__(self, features): 
         self.features = features 
          
      
     def _pca(self, number_of_components = 5): 
-        ''' 
+        """ 
         Perform principal component analysis using cluster features. 
-        ''' 
+        
+        Parameters
+        ----------
+        number_of_components: int
+            Map features to n number of principal components.
+            Default is 5.
+        """ 
          
         labels = self.features.columns 
         X = np.array(self.features) 
@@ -29,7 +41,9 @@ class ClusterAnalysis:
     def _predict_quality(self, model = None): 
         """ 
         Predict clustering quality from a set of clustering features. 
-        A pre-trained, default model is provides, but customization is possible. 
+        A pre-trained, default model is provided, but customization is possible.
+        To use a custom model, provide the path to the model with a .pkl
+        extension. The model can be created using the TrainModel class.
          
         Parameters 
         ---------- 
@@ -60,7 +74,13 @@ class ClusterAnalysis:
         return predictions 
      
  
-class TrainModel: 
+class TrainModel:
+    """
+    Train your own classification model for predicting clustering quality.
+    This requires information about cluster, epitopes and the features
+    corresponding to the clusters. If the latter is not provided, clusTCR
+    will calculate the features of the clustering data provided.
+    """
      
     def __init__(self, clusters, epitope_data, features=None): 
          
@@ -74,7 +94,10 @@ class TrainModel:
             self.features = f.compute_features() 
          
          
-    def _fit(self): 
+    def _fit(self):
+        """
+        Fit your model to the data.
+        """
      
         data = self.prep_data_for_ML() 
          
@@ -89,7 +112,12 @@ class TrainModel:
         return classifier.fit(X, y) 
      
      
-    def _evaluate(self): 
+    def _evaluate(self):
+        """
+        Evaluate your model through stratified cross-validation procedure.
+        Model performance is expressed as the area under the receiver
+        operating characteristic (AUROC).
+        """
          
         data = self.prep_data_for_ML() 
          
@@ -103,7 +131,7 @@ class TrainModel:
         fig, ax = stratified_cross_validation(classifier, X, y) 
         ax.plot([0, 1], [0, 1], color = 'red', alpha = .5,  lw = 4, linestyle = '--', label = 'random') 
          
-        # Figure aesthetics 
+        # Plot styling 
         ax.set(xlim=[0, 1], ylim=[0, 1]) 
         ax.set_title("Receiver operating characteristic", fontsize=26) 
         ax.set_xlabel("False Positive Rate", fontsize=20) 
@@ -121,4 +149,14 @@ class TrainModel:
 
     
     def _save(self, model, filename):
+        """
+        Dump custom model into .pkl file.
+        
+        Parameters
+        ----------
+        model:  
+            Classification model trained with the ._fit() method.
+        filename: str
+            Path to location where model needs to be dumped.
+        """
         pickle.dump(model, open(filename, 'wb'))
