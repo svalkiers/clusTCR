@@ -43,16 +43,17 @@ Fraction of sequences that is assigned to *any* cluster.
 
 ```python
 metrics.retention()
->> 0.2853333333333333
+>> 0.225184
 ```
 
 #### Purity
 
 Fraction of sequences within a cluster targeting the same epitope.  
 Returns a tuple of (result, baseline_result).
+
 ```python
 metrics.purity()
->> (0.8916464891041163, 0.21337772397094432)
+>> (0.872675, 0.346209)
 ```
 
 #### Purity90
@@ -62,7 +63,7 @@ Returns a tuple of (result, baseline_result).
 
 ```python
 metrics.purity_90()
->> (0.8916464891041163, 0.21337772397094432)
+>> (0.727723, 0.019802)
 ```
 
 #### Consistency
@@ -71,8 +72,8 @@ Fraction of sequences targeting the same epitope that are assigned to the same c
 Returns a tuple of (result, baseline_result).
 
 ```python
-metrics.consistency() TODO correct results
->> (0.8916464891041163, 0.21337772397094432)
+metrics.consistency()
+>> (0.360515, 0.123033)
 ```
 
 #### Summary
@@ -80,6 +81,14 @@ metrics.consistency() TODO correct results
 All available clustering metrics and as a `pandas.DataFrame`.
 
 ```python
-metrics.summary() TODO results
->> pandas.Dataframe
+metrics.summary()
 ```
+
+The `pandas.DataFrame` will look like this:
+
+| actual   | baseline | metric      |
+| :------- | :------- | :---------- |
+| 0.225184 | 0.225184 | retention   |
+| 0.872675 | 0.346209 | purity      |
+| 0.727723 | 0.019802 | purity_90   |
+| 0.360515 | 0.123033 | consistency |
