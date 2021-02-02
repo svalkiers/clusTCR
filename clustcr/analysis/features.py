@@ -26,7 +26,7 @@ class FeatureGenerator:
 
 
 
-    def calc_variation(self, correction="log"):
+    def _calc_variation(self, correction="log"):
         """
         Correction factors:
             - log: 1/log2(n) correction (better for smaller clusters)
@@ -87,7 +87,7 @@ class FeatureGenerator:
 
 
     
-    def calc_physchem(self):
+    def _calc_physchem(self):
         """
         Calculate the average physicochemical properties for a CDR3 amino acid sequence.
         Takes a nodelist as input. This can be calculated with the network_clustering() function.
@@ -112,7 +112,7 @@ class FeatureGenerator:
     
     
     
-    def calc_pgen(self):
+    def _calc_pgen(self):
         """
         Calculate the average generation probability of a cluster.
         PGEN calculations are based on the OLGA module.
@@ -153,7 +153,7 @@ class FeatureGenerator:
         
         
     
-    def combine(self, *args):
+    def _combine(self, *args):
         """
         Combine cluster features into one pd.DataFrame.
         """
@@ -165,11 +165,11 @@ class FeatureGenerator:
         """
         Compute feature matrix.
         """
-        aavar = self.calc_variation()
-        pchem = self.calc_physchem()
-        pgen = self.calc_pgen()
+        aavar = self._calc_variation()
+        pchem = self._calc_physchem()
+        pgen = self._calc_pgen()
         
-        return self.combine(aavar, pchem, pgen)
+        return self._combine(aavar, pchem, pgen)
     
     
     

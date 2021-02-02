@@ -20,7 +20,7 @@ class ClusterAnalysis:
         self.features = features 
          
      
-    def _pca(self, number_of_components = 5): 
+    def pca(self, number_of_components = 5): 
         """ 
         Perform principal component analysis using cluster features. 
         
@@ -38,7 +38,7 @@ class ClusterAnalysis:
         principal_component_analysis(X, labels, number_of_components) 
          
      
-    def _predict_quality(self, model = None): 
+    def predict_quality(self, model = None): 
         """ 
         Predict clustering quality from a set of clustering features. 
         A pre-trained, default model is provided, but customization is possible.
@@ -94,7 +94,7 @@ class TrainModel:
             self.features = f.compute_features() 
          
          
-    def _fit(self):
+    def fit(self):
         """
         Fit your model to the data.
         """
@@ -112,7 +112,7 @@ class TrainModel:
         return classifier.fit(X, y) 
      
      
-    def _evaluate(self):
+    def evaluate(self):
         """
         Evaluate your model through stratified cross-validation procedure.
         Model performance is expressed as the area under the receiver
@@ -148,7 +148,7 @@ class TrainModel:
         plt.show()
 
     
-    def _save(self, model, filename):
+    def save(self, model, filename):
         """
         Dump custom model into .pkl file.
         
