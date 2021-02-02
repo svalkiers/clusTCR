@@ -1,7 +1,10 @@
 from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
 from clustcr.input.immuneaccess import construct_metarepertoire, immuneACCESS_to_cdr3list
+from os.path import join, dirname, abspath
 
-vdjdb_location = './vdjdb_trb.tsv'
+DIR = dirname(abspath(__file__))
+
+vdjdb_location = join(DIR, 'vdjdb_trb.tsv')
 
 
 def test_cdr3():
