@@ -14,27 +14,18 @@ class FaissClustering:
         self.kmeans = None
         self.max_sequence_size = max_sequence_size
 
-    def train(self,
-              data: pd.Series,
-              properties: list = OPTIMAL,
-              avg_cluster_size=10,
-              use_gpu=False):
+    def train(self, data: pd.Series):
         """
-        Clusters the given CDR3 series and returns a FaissClustering object
-
-        @params
-        properties: to be used during the clustering can be given in a list, and are available to import as
-                        'from faiss_clustering.properties import *'
-
-        avg_cluster_size: the average size of the clusters that will be generated
+        Trains the kmeans clustering using the given cdr3 data
         """
-        profiles = make_profiles(data, properties, self.max_sequence_size)
+        profiles = make_profiles(data, self.properties, self.max_sequence_size)
         size, dimension = profiles.shape
-        centroids = max(1, size // avg_cluster_size)
-        self.kmeans = faiss.Kmeans(dimension, centroids, gpu=use_gpu, min_points_per_centroid=1)
+        centroids = max(1, size // self.avg_cluster_size)
+        self.kmeans = faiss.Kmeans(dimension, centroids, gpu=self.use_gpu, min_points_per_centroid=1)
         self.kmeans.train(profiles)
 
     def cluster(self, data: pd.Series):
+        assert self.kmeans is not None, "FaissClustering not trained"
         profiles = make_profiles(data, self.properties, self.max_sequence_size)
         D, I = self.kmeans.index.search(profiles, 1)
         return I

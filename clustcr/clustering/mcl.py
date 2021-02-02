@@ -73,7 +73,6 @@ def clusters_without_hd1_edges(edges, cluster_contents):
     """
     clusters = []
     ids_to_be_removed = []
-    current_cluster_id = 0
     for i, edge_list in edges.items():
         if len(edge_list) != 0:
             continue
@@ -81,9 +80,8 @@ def clusters_without_hd1_edges(edges, cluster_contents):
         cluster = cluster_contents[i]
         clusters.append(pd.DataFrame({
             'CDR3': cluster,
-            'cluster': [current_cluster_id] * len(cluster)
+            'cluster': [0] * len(cluster)
         }))
-        current_cluster_id += 1
     for id in ids_to_be_removed:
         del edges[id]
     return clusters
@@ -111,7 +109,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     for c in range(len(nodelist)):
         if c != 0:
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
-    return pd.concat(nodelist)
+    return pd.concat(nodelist, ignore_index=True)
 
 
 def MCL_from_preclusters(cdr3, preclust):

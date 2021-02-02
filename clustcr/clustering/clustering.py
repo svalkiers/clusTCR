@@ -47,7 +47,8 @@ class Clustering:
                  faiss_cluster_size=5000,
                  mcl_params=None,
                  faiss_training_data=None,
-                 max_sequence_size=None):
+                 max_sequence_size=None,
+                 fitting_data_size=None):
 
         """
         Parameters
@@ -72,6 +73,9 @@ class Clustering:
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_training_data = faiss_training_data
         self.max_sequence_size = max_sequence_size
+        if fitting_data_size and self.faiss_training_data:
+            self.faiss_cluster_size = int(self.faiss_cluster_size / (fitting_data_size / len(self.faiss_training_data)))
+        self.faiss_clustering = self._train_faiss(faiss_training_data) if faiss_training_data is not None else None
         self._set_n_cpus(n_cpus)
 
         available = ["MCL",
@@ -91,6 +95,13 @@ class Clustering:
         else:
             self.n_cpus = n_cpus
 
+    def _train_faiss(self, cdr3: pd.Series):
+        clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
+                                     use_gpu=self.use_gpu,
+                                     max_sequence_size=self.max_sequence_size)
+        clustering.train(cdr3)
+        return clustering
+
     def _faiss(self, cdr3: pd.Series):
         """
         FAISS clustering method
@@ -103,16 +114,14 @@ class Clustering:
             contains the corresponding cluster ids.
         """
         cdr3 = cdr3.reset_index(drop=True)
-        clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
-                                     use_gpu=self.use_gpu,
-                                     max_sequence_size=self.max_sequence_size)
-        if self.faiss_training_data:
-            clustering.train(self.faiss_training_data)
+        if self.faiss_clustering is not None:
+            clustering = self.faiss_clustering
         else:
-            clustering.train(cdr3)
+            clustering = self._train_faiss(cdr3)
 
+        result = clustering.cluster(cdr3)
         clusters = {"CDR3": [], "cluster": []}
-        for i, cluster in enumerate(clustering.cluster(cdr3)):
+        for i, cluster in enumerate(result):
             clusters["CDR3"].append(cdr3[i])
             clusters["cluster"].append(int(cluster))
 
