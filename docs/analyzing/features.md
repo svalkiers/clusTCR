@@ -31,7 +31,7 @@ Clusters can be represented by a feature matrix that describes several propertie
 These features can be calculated by creating a `FeatureGenerator` object. The input provided should correspond to the output of the clustering procedure. From this object, you can compute all features provided in **Table 1**.
 
 ```python
-from clustcr.analysis.features import FeatureGenerator
+from clustcr import FeatureGenerator
 fg = FeatureGenerator(clusters)
 features = fg.compute_features()
 ```

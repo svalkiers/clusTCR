@@ -13,7 +13,7 @@ parent: Analyzing
 clusTCR provides a number of options for exploration of clustering results. To perform these analysis, you must initiate a `ClusterAnalysis` object, which takes cluster features as its only argument.
 
 ```python
-from clustcr.analysis.data_exploration import ClusterAnalysis
+from clustcr import ClusterAnalysis
 analysis = ClusterAnalysis(features)
 ```
 
@@ -22,7 +22,7 @@ analysis = ClusterAnalysis(features)
 To get a quick overview of the newly generated features, you can perform a principal component analysis (PCA). clusTCR contains a built-in PCA functionality, which can be conveniently executed by performing the `._pca()` method on a `ClusterAnalysis` object.
 
 ```python
-analysis._pca(features)
+analysis.pca(features)
 ```
 
 Performing a PCA with clusTCR will provide a figure of the PCA loadings.
@@ -41,7 +41,7 @@ An additional feature of clusTCR's analysis module is predicting the quality of 
 ##### Using the pre-trained model
 
 ```python
-predictions = analysis._predict_quality()
+predictions = analysis.predict_quality()
 ```
 
 ##### Training your own model
@@ -49,16 +49,16 @@ predictions = analysis._predict_quality()
 You can also train your own model by creating a `ModelTraining` object. To do this, you will need to provide the following three arguments: features (see features page [ADD LINK]), results from the clustering and epitope data corresponding to the CDR3 sequences used for clustering.
 
 ```python
-from clustcr.analysis.data_exploration import ModelTraining
+from clustcr import ModelTraining
 model = ModelTraining(features, clusters, epitopes)
-clf = model._fit()
+clf = model.fit()
 ```
 
 You can evaluate your own model using the `._evaluate()` method. This will perform 10-fold stratified cross-validation and outputs a receiver operating characteristic (ROC) curve with corresponding area under the curve (AUC) value.
 
 ```python
 # Evaluate your own model
-model._evaluate()
+model.evaluate()
 ```
 
 <p align="center">
@@ -68,7 +68,7 @@ model._evaluate()
 Save your model using the following method:
 
 ```python
-model._save(clf, '/path_to_model/my_custom_model.pkl')
+model.save(clf, '/path_to_model/my_custom_model.pkl')
 ```
 
 If you want to use this model to make quality predictions, just specify the path to your model in the *model* parameter of the `_predict_quality()` method.
