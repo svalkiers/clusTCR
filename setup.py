@@ -24,7 +24,7 @@ setup(
     url='https://github.com/svalkiers/clustcr',
     packages=find_packages(exclude=('analysis',)),
     package_data={
-        'clustcr': ['../data/*', '../data/*/*', 'input/adaptive_imgt_mapping.csv']
+        'clustcr': ['../data/*', '../data/*/*', 'input/adaptive_imgt_mapping.csv', 'input/vdjdb_trb.tsv']
     },
     include_package_data=True,
     install_requires=requirements,
