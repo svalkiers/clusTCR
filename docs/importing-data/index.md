@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Importing data
+title: Importing
 nav_order: 3
 ---
 
