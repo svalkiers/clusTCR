@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import multiprocessing
 from typing import Union
 from os.path import join, exists
@@ -174,23 +173,39 @@ class Clustering:
                 f.write(row['CDR3'] + '\n')
 
     def batch_cluster(self):
-        # We look at the precluster size (faiss cluster size) to see how many we process per batch
-        # Memory for 50k sequences shouldn't be an issue
+        """
+        Clusters the preclusters (stored on disk) using MCL.
+        Thus requires the batch_precluster method to be called beforehand.
+
+        - Multiprocessing is used (if enabled) to cluster multiple preclusters at the same time.
+        - Generator function (by using yield) to prevent memory overflow
+
+        The amount of preclusters that is clustered by MCL per batch (iteration) is calculated as such:
+            - Check how many preclusters roughly contain 50k sequences when combined (as that should fit in memory no problem)
+            - Limit to bounds (1, ncpus)
+        """
         clusters_per_batch = max(1, min(self.n_cpus, 50000 // self.faiss_cluster_size))
         npreclusters = self.faiss_clustering.ncentroids()
+        max_cluster_id = 0
         for i in range(0, npreclusters, clusters_per_batch):
-            preclusters = {'CDR3': [], 'cluster': []}
-            for cluster_id in range(i, i + clusters_per_batch):
-                if cluster_id >= npreclusters:
-                    break
-                filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
-                with open(filename) as f:
-                    sequences = f.readlines()
-                    preclusters['CDR3'].extend(sequences)
-                    preclusters['cluster'].extend([cluster_id] * len(sequences))
-            preclusters = ClusteringResult(pd.DataFrame(preclusters))
+            cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
+            preclusters = self._batch_process_preclusters(cluster_ids)
             mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.n_cpus)
+            mcl_result['cluster'] += max_cluster_id + 1
+            max_cluster_id = mcl_result['cluster'].max()
             yield ClusteringResult(mcl_result)
+
+    def _batch_process_preclusters(self, cluster_ids):
+        preclusters = {'CDR3': [], 'cluster': []}
+        for cluster_id in cluster_ids:
+            filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
+            if not exists(filename):
+                continue
+            with open(filename) as f:
+                sequences = f.readlines()
+                preclusters['CDR3'].extend(sequences)
+                preclusters['cluster'].extend([cluster_id] * len(sequences))
+        return ClusteringResult(pd.DataFrame(preclusters))
 
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)

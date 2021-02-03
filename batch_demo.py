@@ -1,7 +1,7 @@
 from clustcr import Clustering, datasets
 from clustcr.modules.faiss_clustering import datasets as d
 
-POSSIBLE_DATA = [lambda: d.vdj()[0], d.covid19_repertoire]
+POSSIBLE_DATA = [lambda: d.immune_race()[0], lambda: d.vdj()[0], d.covid19_repertoire]
 
 
 def max_sequence_size_and_total_fitting_size():
@@ -24,7 +24,7 @@ def batch_cluster():
                             fitting_data_size=total_fitting_size)
 
     for data in POSSIBLE_DATA:
-        cdr3 = data()
+        cdr3 = data()  # Load data
         clustering.batch_precluster(cdr3)
 
     for clusters in clustering.batch_cluster():
