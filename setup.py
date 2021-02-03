@@ -24,7 +24,10 @@ setup(
     url='https://github.com/svalkiers/clustcr',
     packages=find_packages(exclude=('analysis',)),
     package_data={
-        'clustcr': ['input/adaptive_imgt_mapping.csv', 'input/vdjdb_trb.tsv', 'modules/olga/default_models/*/*']
+        'clustcr': ['input/adaptive_imgt_mapping.csv', 
+                    'input/vdjdb_trb.tsv', 
+                    'modules/olga/default_models/*/*',
+                    'analysis/cq_classifier.pkl']
     },
     include_package_data=True,
     install_requires=requirements,
