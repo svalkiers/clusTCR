@@ -4,8 +4,8 @@ import pandas as pd
 from clustcr.chem_properties import PHYSCHEM
 from ..modules.olga import load_model as load_model
 from ..modules.olga import generation_probability as pgen
-
 from .tools import profile_matrix, motif_from_profile
+from os import path
 
 class FeatureGenerator:
     """
@@ -118,15 +118,17 @@ class FeatureGenerator:
         PGEN calculations are based on the OLGA module.
         """
         
+        DIR = '/'.join(path.dirname(path.abspath(__file__)).split('/')[:-1]) + '/'
+        
         print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
         user_input = input("Confirm: [Y/N] ")
         
         if user_input.lower() in ("y", "yes"):
             
-            params_file_name = 'modules/olga/default_models/human_T_beta/model_params.txt'
-            marginals_file_name = 'modules/olga/default_models/human_T_beta/model_marginals.txt'
-            V_anchor_pos_file ='modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv'
-            J_anchor_pos_file = 'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv'
+            params_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_params.txt')
+            marginals_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_marginals.txt')
+            V_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv')
+            J_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv')
             
             genomic_data = load_model.GenomicDataVDJ()
             genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)

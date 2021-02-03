@@ -60,7 +60,7 @@ def motif_from_profile(profile):
     return consensus
 
 
-def principal_component_analysis(features, labels, n_comp):
+def principal_component_analysis(features, labels, n_comp, location=None):
     
     # Scale features
     data = StandardScaler().fit_transform(features)
@@ -95,59 +95,10 @@ def principal_component_analysis(features, labels, n_comp):
     ax.grid()
     
     # Save figure and show output
-    fig.savefig("../results/figures/cluster_features_PCA.pdf", format='pdf', dpi=1200)
+    if location is not None:
+        fig.savefig(location + 'pca_features.eps', format='eps')
     plt.show()
-    
-    
 
-def generate_labels(clusters, epitope_data):
-        
-    metrics = Metrics(clusters, epitope_data)
-    cm = metrics.calc_confmat()[0]
-    
-    labels = [cm[i].max() / np.sum(cm[i]) for i in cm]
-    
-    return labels
-
-
-def data_to_ml_format(features, labels, cluster_size):
-    
-    X = np.array(features)
-    
-    y = np.asarray(labels) # Actual and permuted purities
-    d = np.append(X, y, axis = 1) # Append targets to features
-    d = d[d[:,1] >= cluster_size] # Filter on cluster size
-    d = d[~np.isnan(d).any(axis=1)] # Remove nan values from array
-
-    X = d[:,:-1] # Isolate features
-    X = StandardScaler().fit_transform(X) # Scale features
-    
-    y = np.array(d[:,-1]) # Actual purities
-    
-    return X, y
-
-    
-def prep_data_for_ML(features, labels = None, c = .9, s = 3):
-    '''
-    Generate binary labels from cluster purities. These labels represent:
-        - 1 ~ GOOD PURITY
-        - 0 ~ BAD PURITY
-    
-    c : value that defines the cutoff between good and bad purity.
-    s : minimum allowed cluster size.
-    '''
-    
-    if labels is None:
-        labels = generate_labels()
-
-    for a in labels:
-        # Actual clusters
-        if a[1] >= c:
-            labels[a[0]] = 1 # Good
-        else:
-            labels[a[0]] = 0 # Bad
-            
-    return data_to_ml_format(features, labels, s)
 
 
 def stratified_cross_validation(model, X, y, n_folds = 10):
