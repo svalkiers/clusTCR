@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import multiprocessing
 from typing import Union
+from os.path import join, exists
+from os import mkdir
+from shutil import rmtree
+import random
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering
@@ -40,6 +44,8 @@ class Clustering:
         as well as GPU support.
     """
 
+    BATCH_TMP_DIRECTORY = 'clustcr_batch_tmp' + str(random.randint(0, 10 ** 8))
+
     def __init__(self,
                  method='two-step',
                  n_cpus: Union[str, int] = 'all',
@@ -71,13 +77,20 @@ class Clustering:
         self.method = method.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
+
+        # For batch processing
         self.faiss_training_data = faiss_training_data
         self.max_sequence_size = max_sequence_size
-        if fitting_data_size and self.faiss_training_data:
+        if fitting_data_size and self.faiss_training_data is not None:
             self.faiss_cluster_size = int(self.faiss_cluster_size / (fitting_data_size / len(self.faiss_training_data)))
-        self.faiss_clustering = self._train_faiss(faiss_training_data) if faiss_training_data is not None else None
-        self._set_n_cpus(n_cpus)
+            self.faiss_clustering = self._train_faiss(faiss_training_data)
+            if exists(Clustering.BATCH_TMP_DIRECTORY):
+                rmtree(Clustering.BATCH_TMP_DIRECTORY)
+            mkdir(Clustering.BATCH_TMP_DIRECTORY)
+        else:
+            self.faiss_clustering = None
 
+        self._set_n_cpus(n_cpus)
         available = ["MCL",
                      "FAISS",
                      "TWO-STEP"]
@@ -151,6 +164,36 @@ class Clustering:
             return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
         else:
             return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
+
+    def batch_precluster(self, cdr3: pd.Series):
+        assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
+        clustered = self._faiss(cdr3)
+        for index, row in clustered.clusters_df.iterrows():
+            filename = join(Clustering.BATCH_TMP_DIRECTORY, str(row['cluster']))
+            with open(filename, 'a') as f:
+                f.write(row['CDR3'] + '\n')
+
+    def batch_cluster(self):
+        # We look at the precluster size (faiss cluster size) to see how many we process per batch
+        # Memory for 50k sequences shouldn't be an issue
+        clusters_per_batch = max(1, min(self.n_cpus, 50000 // self.faiss_cluster_size))
+        npreclusters = self.faiss_clustering.ncentroids()
+        for i in range(0, npreclusters, clusters_per_batch):
+            preclusters = {'CDR3': [], 'cluster': []}
+            for cluster_id in range(i, i + clusters_per_batch):
+                if cluster_id >= npreclusters:
+                    break
+                filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
+                with open(filename) as f:
+                    sequences = f.readlines()
+                    preclusters['CDR3'].extend(sequences)
+                    preclusters['cluster'].extend([cluster_id] * len(sequences))
+            preclusters = ClusteringResult(pd.DataFrame(preclusters))
+            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.n_cpus)
+            yield ClusteringResult(mcl_result)
+
+    def batch_cleanup(self):
+        rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
     def fit(self, cdr3: pd.Series):
         """

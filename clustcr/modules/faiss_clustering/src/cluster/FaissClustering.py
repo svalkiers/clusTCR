@@ -29,3 +29,7 @@ class FaissClustering:
         profiles = make_profiles(data, self.properties, self.max_sequence_size)
         D, I = self.kmeans.index.search(profiles, 1)
         return I
+
+    def ncentroids(self):
+        assert self.kmeans is not None, "FaissClustering not trained"
+        return len(self.kmeans.centroids)
