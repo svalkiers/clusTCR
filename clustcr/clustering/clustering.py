@@ -8,12 +8,19 @@ import random
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering
+from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
 
 
 class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
+        
+    def summary(self):
+        motifs = FeatureGenerator(self.clusters_df).clustermotif()
+        summ = self.clusters_df.cluster.value_counts().to_frame()
+        summ['motif'] = motifs.values()
+        return summ
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
