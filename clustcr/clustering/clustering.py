@@ -19,8 +19,13 @@ class ClusteringResult:
     def summary(self):
         motifs = FeatureGenerator(self.clusters_df).clustermotif()
         summ = self.clusters_df.cluster.value_counts().to_frame()
+        summ.rename(columns={'cluster':'size'},inplace=True)
+        summ = summ.rename_axis('cluster_idx').reset_index()
         summ['motif'] = motifs.values()
         return summ
+    
+    def write_to_csv(self, path):
+        return self.clusters_df.to_csv(path,index=False)
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
