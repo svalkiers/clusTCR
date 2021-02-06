@@ -55,7 +55,7 @@ def motif_from_profile(profile):
                 char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
                 consensus += char
         else:
-            consensus += "X"
+            consensus += "."
     
     return consensus
 
