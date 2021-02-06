@@ -24,6 +24,7 @@ Any parameters should be passed to the `Clustering` object at creation, the foll
 | n_cpus | Number of CPUs used in the MCL clustering. This drastically increases the speed of *clusTCR*. When set to -1, all of your CPUs will be used. | -1 (all)  |
 | faiss_cluster_size | The size of the clusters that faiss will generate, either using the faiss or the two-step method. | 5000 |
 | mcl_params | MCL hyperparameters, which should be a list of \[inflation, expansion\] | \[1.2, 2\]  |
+| faiss_training_data, fitting_data_size, max_sequence_size | Only used for clustering in batches, see [clustering large data](large-data) | /  |
 
 To perform the clustering, our interface provides a `fit` method which expects a `pandas.Series`.
 This method can be called multiple times, each time returning the clustering result.  
