@@ -14,7 +14,7 @@ this tutorial we'll go over the steps.
 
 #### Training
 
-The first part of the two-step clustering consists of training. In this step the centroids of the faiss clustering
+The first part of the Faiss clustering consists of training. In this step the centroids of the clustering
 method are calculated, to which we later assign all the sequences and retrieve the superclusters.
 
 3 parameters are necessary for training with a subset of the fitting data.
@@ -48,7 +48,8 @@ Because our data is too large to load at once, we do this preclustering in batch
 
 ```python
 for file in files:
-    data = process_file(file)  # Load your data
+    # Load your data
+    data = process_file(file)
     clustering.batch_precluster(data)
 ```
 
@@ -57,23 +58,27 @@ To store the preclusters, *clusTCR* stores them on disk, with a file for each pr
 
 #### Batch Clustering
 
-Lastly, the final MCL clustering is performed on each of the preclusters.
-Again to make sure that memory restrictions are met, this is done in batches.
-Using a generator function, data is loaded and clustered incrementally.
-To optimize this processs further, a couple of preclusters are loaded at once and clustered using multiprocessing.
+Lastly, the MCL clustering is performed on each of the preclusters.
+To make sure that memory restrictions are met, this is done in batches as well.
+Using a generator function, data is loaded and clustered batch per batch.
+To optimize this process further, a couple of preclusters are loaded at once and clustered using multiprocessing.
 
 
 ```python
 for clusters in clustering.batch_cluster():
-    # Do something with clusters
+    # Do something with the clusters
     print(clusters.clusters_df)
 ```
 
-At each iteration a normal ClusteringResult is returned.
-To store the full result of the clustering it's recommended to store them on file.
+At each iteration a ClusteringResult is returned.
+To store the full result of the clustering it's recommended to store them on disk.
 
 #### Batch Cleanup
 
-To finally delete the temporary files installed
+In the process, a temporary directory is created that includes a file for each precluster.
+To remove this at the end, the cleanup function can be called.
 
+```python
+clustering.batch_cleanup()
+```
 
