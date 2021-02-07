@@ -1,14 +1,34 @@
 import pandas as pd
 import multiprocessing
+from typing import Union
+from os.path import join, exists
+from os import mkdir
+from shutil import rmtree
+import random
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering
+from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
 
 
 class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
+        
+    def summary(self):
+        motifs = FeatureGenerator(self.clusters_df).clustermotif()
+        summ = self.clusters_df.cluster.value_counts().to_frame()
+        summ.rename(columns={'cluster':'size'},inplace=True)
+        summ = summ.rename_axis('cluster_idx').reset_index()
+        summ['motif'] = motifs.values()
+        return summ
+    
+    def write_to_csv(self, path):
+        return self.clusters_df.to_csv(path,index=False)
+
+    def cluster_contents(self):
+        return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
 
     def metrics(self, epi):
         return Metrics(self.clusters_df, epi)
@@ -35,12 +55,17 @@ class Clustering:
         as well as GPU support.
     """
 
+    BATCH_TMP_DIRECTORY = 'clustcr_batch_tmp' + str(random.randint(0, 10 ** 8))
+
     def __init__(self,
                  method='two-step',
-                 n_cpus=-1,
+                 n_cpus: Union[str, int] = 'all',
                  use_gpu=False,
                  faiss_cluster_size=5000,
-                 mcl_params=None):
+                 mcl_params=None,
+                 faiss_training_data=None,
+                 max_sequence_size=None,
+                 fitting_data_size=None):
 
         """
         Parameters
@@ -63,8 +88,20 @@ class Clustering:
         self.method = method.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
-        self._set_n_cpus(n_cpus)
 
+        # For batch processing
+        self.faiss_training_data = faiss_training_data
+        self.max_sequence_size = max_sequence_size
+        if fitting_data_size and self.faiss_training_data is not None:
+            self.faiss_cluster_size = int(self.faiss_cluster_size / (fitting_data_size / len(self.faiss_training_data)))
+            self.faiss_clustering = self._train_faiss(faiss_training_data)
+            if exists(Clustering.BATCH_TMP_DIRECTORY):
+                rmtree(Clustering.BATCH_TMP_DIRECTORY)
+            mkdir(Clustering.BATCH_TMP_DIRECTORY)
+        else:
+            self.faiss_clustering = None
+
+        self._set_n_cpus(n_cpus)
         available = ["MCL",
                      "FAISS",
                      "TWO-STEP"]
@@ -74,14 +111,20 @@ class Clustering:
         # Multiprocessing currently only available for Two-step method.
         # Use 1 cpu for other methods.
         if self.method != 'TWO-STEP' \
-                or n_cpus < -1 \
-                or n_cpus == 0 or \
-                n_cpus > multiprocessing.cpu_count():
+                or (isinstance(n_cpus, str) and n_cpus != 'all') \
+                or (isinstance(n_cpus, int) and (n_cpus < 1 or n_cpus > multiprocessing.cpu_count())):
             self.n_cpus = 1
-        elif n_cpus == -1:
+        elif n_cpus == 'all':
             self.n_cpus = multiprocessing.cpu_count()
         else:
             self.n_cpus = n_cpus
+
+    def _train_faiss(self, cdr3: pd.Series):
+        clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
+                                     use_gpu=self.use_gpu,
+                                     max_sequence_size=self.max_sequence_size)
+        clustering.train(cdr3)
+        return clustering
 
     def _faiss(self, cdr3: pd.Series):
         """
@@ -94,16 +137,19 @@ class Clustering:
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
-        clusters = {"CDR3": [], "cluster": []}
-        faiss_output = FaissClustering.cluster(cdr3.reset_index(drop=True),
-                                               avg_items_per_cluster=self.faiss_cluster_size,
-                                               use_gpu=self.use_gpu)
-        for i, cluster in enumerate(faiss_output.get_cluster_contents()):
-            for seq in cluster:
-                clusters["CDR3"].append(seq)
-                clusters["cluster"].append(i)
+        cdr3 = cdr3.reset_index(drop=True)
+        if self.faiss_clustering is not None:
+            clustering = self.faiss_clustering
+        else:
+            clustering = self._train_faiss(cdr3)
 
-        return pd.DataFrame(clusters)
+        result = clustering.cluster(cdr3)
+        clusters = {"CDR3": [], "cluster": []}
+        for i, cluster in enumerate(result):
+            clusters["CDR3"].append(cdr3[i])
+            clusters["cluster"].append(int(cluster))
+
+        return ClusteringResult(pd.DataFrame(clusters))
 
     def _twostep(self, cdr3):
         """
@@ -113,9 +159,8 @@ class Clustering:
 
         Parameters
         ----------
-        supercluster_size : int, optional
-            Approximate number of sequences in each supercluster. 
-            The default is 5000.
+        cdr3 : pd.Series
+            Input data consisting of a list of CDR3 amino acid sequences.
 
         Returns
         -------
@@ -125,13 +170,57 @@ class Clustering:
             contains the corresponding cluster ids.
         """
 
-        super_clusters = FaissClustering.cluster(cdr3.reset_index(drop=True),
-                                                 avg_items_per_cluster=self.faiss_cluster_size,
-                                                 use_gpu=self.use_gpu)
+        super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus)
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
         else:
-            return MCL_from_preclusters(cdr3, super_clusters)
+            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
+
+    def batch_precluster(self, cdr3: pd.Series):
+        assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
+        clustered = self._faiss(cdr3)
+        for index, row in clustered.clusters_df.iterrows():
+            filename = join(Clustering.BATCH_TMP_DIRECTORY, str(row['cluster']))
+            with open(filename, 'a') as f:
+                f.write(row['CDR3'] + '\n')
+
+    def batch_cluster(self):
+        """
+        Clusters the preclusters (stored on disk) using MCL.
+        Thus requires the batch_precluster method to be called beforehand.
+
+        - Multiprocessing is used (if enabled) to cluster multiple preclusters at the same time.
+        - Generator function (by using yield) to prevent memory overflow
+
+        The amount of preclusters that is clustered by MCL per batch (iteration) is calculated as such:
+            - Check how many preclusters roughly contain 50k sequences when combined (as that should fit in memory no problem)
+            - Limit to bounds (1, ncpus)
+        """
+        clusters_per_batch = max(1, min(self.n_cpus, 50000 // self.faiss_cluster_size))
+        npreclusters = self.faiss_clustering.ncentroids()
+        max_cluster_id = 0
+        for i in range(0, npreclusters, clusters_per_batch):
+            cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
+            preclusters = self._batch_process_preclusters(cluster_ids)
+            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.n_cpus)
+            mcl_result['cluster'] += max_cluster_id + 1
+            max_cluster_id = mcl_result['cluster'].max()
+            yield ClusteringResult(mcl_result)
+
+    def _batch_process_preclusters(self, cluster_ids):
+        preclusters = {'CDR3': [], 'cluster': []}
+        for cluster_id in cluster_ids:
+            filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
+            if not exists(filename):
+                continue
+            with open(filename) as f:
+                sequences = f.readlines()
+                preclusters['CDR3'].extend(sequences)
+                preclusters['cluster'].extend([cluster_id] * len(sequences))
+        return ClusteringResult(pd.DataFrame(preclusters))
+
+    def batch_cleanup(self):
+        rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
     def fit(self, cdr3: pd.Series):
         """
@@ -149,6 +238,6 @@ class Clustering:
         if self.method == 'MCL':
             return ClusteringResult(MCL(cdr3, mcl_hyper=self.mcl_params))
         elif self.method == 'FAISS':
-            return ClusteringResult(self._faiss(cdr3))
+            return self._faiss(cdr3)
         else:
-            return ClusteringResult(self._twostep(cdr3))
+            return self._twostep(cdr3)

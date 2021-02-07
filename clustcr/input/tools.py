@@ -3,6 +3,7 @@ import pandas as pd
 
 from os.path import dirname, abspath, join
 
+DIR = dirname(abspath(__file__))
 ROOT = dirname(dirname(dirname(abspath(__file__))))
 DATA = join(ROOT, 'data')
 
@@ -12,7 +13,7 @@ def path_in_data(filename):
 
 
 def imgt_v_genes(filename='alphabeta_gammadelta_db.tsv'):
-    v_genes = pd.read_csv(path_in_data(filename), sep='\t')
+    v_genes = pd.read_csv(join(DIR, filename), sep='\t')
     v_genes = v_genes[v_genes['chain'] == 'B']
     v_genes = v_genes[v_genes['region'] == 'V']
     v_genes = v_genes[v_genes['organism'] == 'human']

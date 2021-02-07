@@ -55,7 +55,7 @@ def immuneACCESS_to_gliph2(filename):
 
 
 def immuneACCESS_to_cdr3list(filename):
-    prepared_data = parse_immuneACCESS(path_in_data(filename))
+    prepared_data = parse_immuneACCESS(filename)
     return prepared_data.CDR3
 
 

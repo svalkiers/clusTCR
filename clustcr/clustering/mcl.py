@@ -66,45 +66,55 @@ def MCL_multi(edgelist, cdr3):
     return MCL(cdr3, edgelist)
 
 
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
-    # Pool multiple processes for parallelization using multiple cpus.
+def clusters_without_hd1_edges(edges, cluster_contents):
+    """
+    Returns clusters that don't contain edges with edit distance 1
+    Also removes them from the edges
+    """
     clusters = []
-    idxs_to_remove = []
-    edges = [create_edgelist(c) for c in preclust.get_cluster_contents()]
+    ids_to_be_removed = []
+    for i, edge_list in edges.items():
+        if len(edge_list) != 0:
+            continue
+        ids_to_be_removed.append(i)
+        cluster = cluster_contents[i]
+        clusters.append(pd.DataFrame({
+            'CDR3': cluster,
+            'cluster': [0] * len(cluster)
+        }))
+    for id in ids_to_be_removed:
+        del edges[id]
+    return clusters
+
+
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
+    """
+    Pool multiple processes for parallelization using multiple cpus.
+    """
+    cluster_contents = preclust.cluster_contents()
+    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
-    for val in edges:
-        if len(val) == 0:
-            idx = edges.index(val)
-            idxs_to_remove.append(idx)
-            clust = preclust.get_cluster_contents()[idx]
-            if len(clusters) == 0:
-                clusters.append(pd.DataFrame({'CDR3': clust,
-                                              'cluster': [0] * len(clust)}))
-            else:
-                clusters.append(pd.DataFrame({'CDR3': clust,
-                                              'cluster': (clusters[-1]['cluster'].max() + 1) * len(clust)}))
-    for index in sorted(idxs_to_remove, reverse=True):
-        del edges[index]
+    clusters = clusters_without_hd1_edges(edges, cluster_contents)
+    remaining_edges = edges.values()
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(MCL_multi,
-                              edges,
+                              remaining_edges,
                               cdr3,
                               pm_parallel=True,
                               pm_pool=pool)
         nodelist += clusters
+
     # Fix cluster ids
     for c in range(len(nodelist)):
-        if c == 0:
-            pass
-        else:
+        if c != 0:
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
-    return pd.concat(nodelist)
+    return pd.concat(nodelist, ignore_index=True)
 
 
 def MCL_from_preclusters(cdr3, preclust):
     initiate = True
-    for c in preclust.get_cluster_contents():
+    for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c)
             if initiate:

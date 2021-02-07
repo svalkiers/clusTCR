@@ -7,21 +7,23 @@ from ..profile.profile import make_profile
 
 def make_profiles(values: pd.Series,
                   properties,
+                  size,
                   vector_mapping_func=None,
                   add_constant=False,
                   extra_feature_size=0,
                   add_average=False,
                   add_length=False):
-    matrix, profile_length = make_matrix(values, properties, extra_feature_size, add_constant, add_average, add_length)
+    matrix, profile_length = make_matrix(values, properties, size, extra_feature_size, add_constant, add_average, add_length)
     for i, elem in enumerate(values):
         vec = make_vec(elem, profile_length, properties, vector_mapping_func, add_average, add_constant, add_length)
         matrix[i] = vec
     return matrix
 
 
-def make_matrix(values, properties, extra_feature_size, add_constant, add_average, add_length):
+def make_matrix(values, properties, profile_length, extra_feature_size, add_constant, add_average, add_length):
     n = len(values)
-    profile_length = values.str.len().max()
+    if profile_length is None:
+        profile_length = values.str.len().max()
     y_size = profile_length * len(properties) + extra_feature_size
     if add_constant:
         y_size += 1
@@ -78,4 +80,14 @@ def cluster_with_faiss(matrix, items_per_cluster, ids=None, use_gpu=False):
     else:
         index.add(matrix)
     return index
+
+
+def train_clustering(matrix, items_per_cluster, use_gpu=False):
+    ncentroids = matrix.shape[0] // items_per_cluster
+    if ncentroids == 0:
+        ncentroids = 1
+    dimension = matrix.shape[1]
+    kmeans = faiss.Kmeans(dimension, ncentroids, gpu=use_gpu)
+    kmeans.train(matrix)
+    return kmeans
 
