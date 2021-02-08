@@ -1,11 +1,11 @@
-name: tcr
+name: tcr-gpu
 channels:
   - defaults
   - pytorch
 dependencies:
   - python=3.8
   - pip
-  - faiss-cpu
+  - faiss-gpu
   - pip:
       - pandas
       - networkx
