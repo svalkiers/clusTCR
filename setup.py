@@ -25,7 +25,8 @@ setup(
     packages=find_packages(exclude=('analysis',)),
     package_data={
         'clustcr': ['input/adaptive_imgt_mapping.csv', 
-                    'input/vdjdb_trb.tsv', 
+                    'input/vdjdb_trb.tsv',
+                    'input/alphabeta_gammadelta_db.tsv',
                     'modules/olga/default_models/*/*',
                     'analysis/cq_classifier.pkl']
     },

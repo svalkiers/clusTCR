@@ -2,7 +2,7 @@ import pandas as pd
 import multiprocessing
 from typing import Union
 from os.path import join, exists
-from os import mkdir
+from os import mkdir, getcwd
 from shutil import rmtree
 import random
 
@@ -24,7 +24,7 @@ class ClusteringResult:
         summ['motif'] = motifs.values()
         return summ
     
-    def write_to_csv(self, path):
+    def write_to_csv(self, path=join(getcwd(),'clusTCR_clusters.csv')):
         return self.clusters_df.to_csv(path,index=False)
 
     def cluster_contents(self):
