@@ -59,7 +59,7 @@ class Clustering:
 
     def __init__(self,
                  method='two-step',
-                 n_cpus: Union[str, int] = 'all',
+                 n_cpus: Union[str, int] = 1,
                  use_gpu=False,
                  faiss_cluster_size=5000,
                  mcl_params=None,
