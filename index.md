@@ -33,4 +33,18 @@ To install clusTCR on Linux or OSX, simply use conda.
 conda install clustcr -c svalkiers -c bioconda -c pytorch -c conda-forge
 ```
 
-You're good to go!
+A GPU version is also available (only for CUDA enabled GPUs on Linux), with support for the `use_gpu` parameter in the `Clustering` interface.
+
+```
+conda install clustcr-gpu -c svalkiers -c bioconda -c pytorch -c conda-forge
+```
+
+Mind that the correct CUDA toolkit should also be installed.
+
+```
+conda install cudatoolkit=8.0  # For CUDA8
+conda install cudatoolkit=9.0  # For CUDA9
+conda install cudatoolkit=10.0 # For CUDA10
+```
+
+To read more about the GPU support, visit the [Faiss GPU page](https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU).
