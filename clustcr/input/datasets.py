@@ -1,5 +1,7 @@
 from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
 from clustcr.input.immuneaccess import construct_metarepertoire, immuneACCESS_to_cdr3list
+from clustcr.input.tcrex import TCRex_to_cdr3list
+from clustcr.input.airr import airr_to_cdr3list
 from os.path import join, dirname, abspath
 
 DIR = dirname(abspath(__file__))
@@ -22,6 +24,17 @@ def test_epitopes():
     This data can be used for testing and benchmarking.
     """
     return vdjdb_epitopes_small()
+
+
+def read_cdr3(file, format):
+    if format.lower()=='immuneaccess':
+        return immuneACCESS_to_cdr3list(file)
+    elif format.lower()=='airr':
+        return airr_to_cdr3list(file)
+    elif format.lower()=='tcrex':
+        return TCRex_to_cdr3list(file)
+    else:
+        print('Unrecognised format: %s' % (format))
 
 
 def vdjdb_cdr3():
@@ -50,10 +63,6 @@ def vdjdb_tcrdist_small(q=1):
 
 def vdjdb_epitopes_small(q=1):
     return vdjdb_to_epitopedata(vdjdb_location, q=q).drop_duplicates()
-
-
-def immuneACCESS_cdr3(file):
-    return immuneACCESS_to_cdr3list(file)
 
 
 def metarepertoire_gliph2(location, n_sequences=10 ** 6):
