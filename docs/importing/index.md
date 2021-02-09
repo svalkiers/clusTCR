@@ -6,10 +6,10 @@ nav_order: 3
 
 ##  Importing data
 
-Data import functions are provided within the `datasets` method.
+Data import functions are provided within the `datasets` method. A method for reading common rep-seq formats is also provided within clusTCR. Additionally, *clusTCR* offers a function that randomly samples sequences from a data set to construct metarepertoires.
 
 ```python
-from clustcr import datasets
+from clustcr import datasets, read_cdr3, metarepertoire_cdr3
 ```
 
 ### Built-in data
@@ -28,25 +28,32 @@ vdjdb_cdr3 = datasets.vdjdb_cdr3()
 vdjdb_epitopes = datasets.vdjdb_epitopes()
 ```
 
-### Importing immuneACCESS files
+### Supported input formats
 
-immuneACCESS files can be easily imported from the `datasets` module. This data is not provided within the package, hence you will have to refer to the directory in which you have saved your immuneACCESS files. clusTCR automatically detects the version of the immuneACCESS file (v1 or v2) and parses the file accordingly.
+You can import rep-seq data from different sources using the `read_cdr3()` method.  *clusTCR* supports the following input formats.
 
-#### Importing a single repertoire file in the immuneACCESS format
+| Format         | Method                                   | Info                                                         |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| immuneACCESS   | `read_cdr3(file, format='immuneaccess')` | Version automatically detected. More info about the immuneACCESS format: https://clients.adaptivebiotech.com/immuneaccess. |
+| AIRR standards | `read_cdr3(file, format='airr')`         | More info about the AIRR standards data representation: https://docs.airr-community.org/en/stable/datarep/rearrangements.html. |
+| TCRex          | `read_cdr3(file, format='tcrex')`        | More info about the TCRex format: https://tcrex.biodatamining.be/instructions/. |
 
-To parse and extract CDR3 sequences from a single immuneACCESS file, you can use the `immuneACCESS_cdr3()` function.  This function takes one argument: the path to the immuneACCESS file.
+Rep-seq files can be easily imported from the `.read_cdr3()` method. This data is not provided within the package, hence you will have to refer to the directory in which you have saved your files. Specify the input format and *clusTCR* will return a `pd.Series` of all unique CDR3 sequences from that file.
+
+#### Importing a single rep-seq file
+
+To parse and extract CDR3 sequences from a single file, you can use the `read_cdr3()` function.  This function takes two argument: the path to the file and the input format. For example, importing an immuneACCESS file might look something like this.
 
 ```python
-immuneaccess_repertoire = datasets.immuneACCESS_cdr3('immuneACCESS_file.csv')
+data = read_cdr3('immuneACCESS_file.csv', format='immuneaccess')
 ```
 
 #### Creating metarepertoires
 
-clusTCR offers a functionality that can be used to create (large) metarepertoire files from a directory containing TCR repertoires in the immuneACCESS format. To create a metarepertoire, you must specificy the directory in which the immuneACCESS files are located, as well as the desired size of the metarepertoire.
+*clusTCR* offers a functionality that can be used to create (large) metarepertoire files from a directory containing TCR repertoires. To create a metarepertoire, you must specificy the directory in which the files are located, as well as the input format and desired size of the metarepertoire.
 
 ```python
-metarepertoire = datasets.metarepertoire_cdr3('immuneACCESS_file_directory/', n_sequences=10**6)
+metarepertoire = metarepertoire_cdr3('immuneACCESS_file_directory/', format='immuneaccess', n_sequences=10**6)
 ```
 
 This will return a list of unique CDR3 sequences sampled from repertoires in the specified directory.
-
