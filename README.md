@@ -1,4 +1,4 @@
-# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/maxvanhoucke/clustcr) [![license](https://anaconda.org/svalkiers/clustcr/badges/license.svg)](https://anaconda.org/maxvanhoucke/clustcr)
+# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr) [![license](https://anaconda.org/svalkiers/clustcr/badges/license.svg)](https://anaconda.org/svalkiers/clustcr)
 
 A two-step clustering approach that combines the speed of the [Faiss Clustering Library](https://github.com/facebookresearch/faiss) with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/)
 
@@ -21,7 +21,7 @@ To get you started, here's how to install clusTCR
 $ conda install clustcr -c svalkiers -c bioconda -c pytorch -c conda-forge
 ```
 
-There's also a GPU version available, with support for the `gpu` parameter in the `Clustering` interface.
+There's also a GPU version available, with support for the `use_gpu` parameter in the `Clustering` interface.
 
 ```
 $ conda install clustcr-gpu -c svalkiers -c bioconda -c pytorch -c conda-forge
