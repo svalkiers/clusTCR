@@ -29,6 +29,9 @@ class ClusteringResult:
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
+    
+    def compute_features(self, compute_pgen=True):
+        return FeatureGenerator(self.clusters_df).get_features(compute_pgen=compute_pgen)
 
     def metrics(self, epi):
         return Metrics(self.clusters_df, epi)
