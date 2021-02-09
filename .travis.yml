@@ -15,13 +15,8 @@ install:
   - hash -r
   - conda config --set always_yes yes
   - conda update -q conda
-  - conda install conda-build anaconda-client pytest pytest-cov
+  - conda install conda-build anaconda-client
   - conda config --set auto_update_conda no
-  - conda build conda/ --no-test
+  - conda build conda/clustcr/ --no-test
   - conda install --use-local clustcr
   - conda info -a
-script:
-  - pytest -v --color=yes --cov=clustcr tests
-after_success:
-  - conda install -c conda-forge codecov
-  - codecov
