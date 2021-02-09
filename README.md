@@ -1,4 +1,4 @@
-# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/maxvanhoucke/clustcr) [![license](https://anaconda.org/svalkiers/clustcr/badges/license.svg)](https://anaconda.org/maxvanhoucke/clustcr)
+# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr) [![license](https://anaconda.org/svalkiers/clustcr/badges/license.svg)](https://anaconda.org/svalkiers/clustcr)
 
 A two-step clustering approach that combines the speed of the [Faiss Clustering Library](https://github.com/facebookresearch/faiss) with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/)
 
@@ -21,9 +21,18 @@ To get you started, here's how to install clusTCR
 $ conda install clustcr -c svalkiers -c bioconda -c pytorch -c conda-forge
 ```
 
-You're good to go!
+There's also a GPU version available, with support for the `use_gpu` parameter in the `Clustering` interface.
+
+```
+$ conda install clustcr-gpu -c svalkiers -c bioconda -c pytorch -c conda-forge
+```
+
+Mind that this is for specific GPUs only, see our [docs](https://svalkiers.github.io/clusTCR/) for more information.
+
 
 ## Development Guide
+
+#### Environment
 
 To start developing, after cloning the repository, create the necessary environment
 
@@ -31,11 +40,27 @@ To start developing, after cloning the repository, create the necessary environm
 $ conda env create -f conda/env.yml
 ```
 
-To build a new conda package, use conda build as follows. 
-Mind that the correct channels (pytorch, bioconda & conda-forge) should be added first or be incorporated in the commands.
+The requirements are slightly different for the GPU supported version
 
-- clustcr `$ conda build conda/clustcr/`
-- clustcr-gpu `$ conda build conda/clustcr-gpu/`
+```
+$ conda env create -f conda/env_gpu.yml
+```
+
+#### Building Packages
+
+To build a new conda package, `conda build` is used.  
+Mind that the correct channels (pytorch, bioconda & conda-forge) should be added first or be 
+incorporated in the commands as can be seen in the install commands above.
+
+```
+$ conda build conda/clustcr/
+```
+
+For the GPU package:
+
+```
+$ conda build conda/clustcr-gpu/
+```
 
 
 
