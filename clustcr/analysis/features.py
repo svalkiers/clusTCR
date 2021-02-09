@@ -119,39 +119,28 @@ class FeatureGenerator:
         """
         
         DIR = '/'.join(path.dirname(path.abspath(__file__)).split('/')[:-1]) + '/'
+                
+        params_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_params.txt')
+        marginals_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_marginals.txt')
+        V_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv')
+        J_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv')
         
-        print("\nCalculating generation probabilities may take a while. Are you sure you want to continue?")
-        user_input = input("Confirm: [Y/N] ")
+        genomic_data = load_model.GenomicDataVDJ()
+        genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
         
-        if user_input.lower() in ("y", "yes"):
-            
-            params_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_params.txt')
-            marginals_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_marginals.txt')
-            V_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv')
-            J_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv')
-            
-            genomic_data = load_model.GenomicDataVDJ()
-            genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
-            
-            generative_model = load_model.GenerativeModelVDJ()
-            generative_model.load_and_process_igor_model(marginals_file_name)
-            
-            pgen_model = pgen.GenerationProbabilityVDJ(generative_model, genomic_data)
-            
-            p = [pgen_model.compute_aa_CDR3_pgen(seq) for seq in self.nodes["CDR3"]]
-            self.nodes["pgen"] = p
-            
-            pgenvals = pd.concat([self.nodes.groupby("cluster")["pgen"].mean().rename("pgen_avg"),
-                                  self.nodes.groupby("cluster")["pgen"].var().rename("pgen_var")],
-                                 axis=1)
-            
-            return pgenvals
-            
-        elif user_input.lower() in ("n", "no"):
-            return None
-        else:
-            print(f"Error: Unrecognised input '{user_input}'.")
-            return None
+        generative_model = load_model.GenerativeModelVDJ()
+        generative_model.load_and_process_igor_model(marginals_file_name)
+        
+        pgen_model = pgen.GenerationProbabilityVDJ(generative_model, genomic_data)
+        
+        p = [pgen_model.compute_aa_CDR3_pgen(seq) for seq in self.nodes["CDR3"]]
+        self.nodes["pgen"] = p
+        
+        pgenvals = pd.concat([self.nodes.groupby("cluster")["pgen"].mean().rename("pgen_avg"),
+                              self.nodes.groupby("cluster")["pgen"].var().rename("pgen_var")],
+                             axis=1)
+        
+        return pgenvals
         
         
     
@@ -163,15 +152,19 @@ class FeatureGenerator:
     
 
 
-    def compute_features(self):
+    def get_features(self, compute_pgen=True):
         """
-        Compute feature matrix.
+        Compute feature matrix. Calculating pgen values can be time consuming.
+        Therefore, the user has the option to skip this step, by turning the
+        compute_pgen parameter to False.
         """
         aavar = self._calc_variation()
         pchem = self._calc_physchem()
-        pgen = self._calc_pgen()
-        
-        return self._combine(aavar, pchem, pgen)
+        if compute_pgen:
+            pgen = self._calc_pgen()
+            return self._combine(aavar, pchem, pgen)
+        else:
+            return self._combine(aavar, pchem)
     
     
     

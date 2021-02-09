@@ -41,7 +41,7 @@ class ClusterAnalysis:
         principal_component_analysis(X, labels, number_of_components, name)
          
      
-    def predict_quality(self, model = None): 
+    def predict_quality(self, model=None): 
         """ 
         Predict clustering quality from a set of clustering features. 
         A pre-trained, default model is provided, but customization is possible.
@@ -63,7 +63,9 @@ class ClusterAnalysis:
             Returns a numpy array indicating high (1) or low (0) quality 
             of clusters. 
         """ 
-         
+        
+        assert 'pgen_avg' in self.features.columns, 'Error: classifier requires values for pgen_avg and pgen_var.'
+        
         if model is None: 
             with open(join(DIR,'cq_classifier.pkl'),'rb') as f: 
                 model = pickle.load(f)
