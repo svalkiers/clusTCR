@@ -36,15 +36,13 @@ conda install clustcr -c svalkiers -c bioconda -c pytorch -c conda-forge
 A GPU version is also available (only for CUDA enabled GPUs on Linux), with support for the `use_gpu` parameter in the `Clustering` interface.
 
 ```
-conda install clustcr-gpu -c svalkiers -c bioconda -c pytorch -c conda-forge
+conda install clustcr-gpu cudatoolkit=VERSION -c svalkiers -c bioconda -c pytorch -c conda-forge
 ```
 
-Mind that the correct CUDA toolkit should also be installed.
+with the cudatoolkit version being
 
-```
-conda install cudatoolkit=8.0  # For CUDA8
-conda install cudatoolkit=9.0  # For CUDA9
-conda install cudatoolkit=10.0 # For CUDA10
-```
+- 8.0 for CUDA8
+- 9.0 for CUDA9
+- 10.0 for CUDA10
 
 To read more about the GPU support, visit the [Faiss GPU page](https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU).
