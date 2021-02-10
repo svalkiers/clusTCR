@@ -7,4 +7,6 @@ parent: Help
 
 ##  Contact
 
-**Contact:** sebastiaan.valkiers@uantwerpen.be
+If you experience any peculiarities or bugs, or if you want to suggest new features for *clusTCR*, feel free to contact us. 
+
+**Email:** sebastiaan.valkiers@uantwerpen.be

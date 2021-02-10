@@ -8,9 +8,9 @@ parent: Analyzing
 
 ## Features
 
-Clusters can be represented by a feature matrix that describes several properties of the amino acid sequence within that cluster, including a number of physicochemical properties, entropy, size, length and generation probability. **Table 1** contains a list of all features calculated by clusTCR, and provides a description for all of them.
+Clusters can be represented by a feature matrix that describes several properties of the amino acid sequence within that cluster, including a number of physicochemical properties, entropy, size, length and generation probability. **Table 1** contains a list of all features calculated by *clusTCR*, and provides a description for all of them.
 
-**Table 1: Computed cluster features**
+**Table 1: Cluster features calculated by *clusTCR*, and their description.**
 
 | feature               | description                                                  |
 | :-------------------- | ------------------------------------------------------------ |
@@ -28,20 +28,20 @@ Clusters can be represented by a feature matrix that describes several propertie
 | pgen_avg              | Average generation probability of CDR3 sequences in the cluster. Generation probability is calculated using the *olga* module. |
 | pgen_var              | Variance in generation probability within the cluster.       |
 
-These features can be calculated by creating a `FeatureGenerator` object. The input provided should correspond to the output of the clustering procedure. From this object, you can compute all features provided in **Table 1**.
+These features can be calculated by calling the `compute_features()` function on a `ClusteringResult` object (see [clustering section](../clustering/how-to-use)). The code block below shows a brief example of a workflow for calculating cluster features.
 
 ```python
-from clustcr import FeatureGenerator
-fg = FeatureGenerator(clusters)
-features = fg.compute_features()
+from clustcr import datasets, Clustering
+
+# Load some data
+data = datasets.test_cdr3()
+
+# Perform clustering
+clustering = Clustering()
+output = clustering.fit(data)
+
+# Compute features of ClusteringResult object
+features = output.compute_features(compute_pgen=True)
 ```
 
-**NOTE:** calculating generation probabilities is time-consuming. You will receive a warning asking you whether you want to proceed.
-
-```
-Calculating generation probabilities may take a while. Are you sure you want to continue?
-
-Confirm: [Y/N] 
-```
-
-If you select `N` the algorithm will generate a feature matrix nevertheless. However, keep in mind that this matrix will not contain values for *pgen_avg* and *pgen_var*.
+Calculating generation probabilities (*pgen*) is time-consuming. A `compute_pgen` parameter is provided, so the user can indicate whether they want to calculate *pgen* values. If this parameter is set to `False`, a feature matrix *without* pgen values is computed. Note that *pgen* is necessary if you want to use the cluster quality classifier's functionality (see section on [exploring clustering results](exploration)).

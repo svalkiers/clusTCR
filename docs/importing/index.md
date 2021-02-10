@@ -56,4 +56,4 @@ data = read_cdr3('immuneACCESS_file.csv', format='immuneaccess')
 metarepertoire = metarepertoire_cdr3('immuneACCESS_file_directory/', format='immuneaccess', n_sequences=10**6)
 ```
 
-This will return a list of unique CDR3 sequences sampled from repertoires in the specified directory.
+This will return a list of (1 million) unique CDR3 sequences sampled from repertoires in the specified directory.
