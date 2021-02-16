@@ -7,7 +7,7 @@ from shutil import rmtree
 import random
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
-from clustcr.modules.faiss_clustering import FaissClustering
+from clustcr.modules.faiss_clustering import FaissClustering, properties
 from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
 
@@ -91,6 +91,7 @@ class Clustering:
         self.method = method.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
+        self.faiss_properties = properties.OPTIMAL
 
         # For batch processing
         self.faiss_training_data = faiss_training_data
@@ -125,7 +126,8 @@ class Clustering:
     def _train_faiss(self, cdr3: pd.Series):
         clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
                                      use_gpu=self.use_gpu,
-                                     max_sequence_size=self.max_sequence_size)
+                                     max_sequence_size=self.max_sequence_size,
+                                     properties=self.faiss_properties)
         clustering.train(cdr3)
         return clustering
 
