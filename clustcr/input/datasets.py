@@ -3,9 +3,9 @@ import random
 import pandas as pd
 
 from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
-from clustcr.input.immuneaccess import construct_metarepertoire, immuneACCESS_to_cdr3list
-from clustcr.input.tcrex import TCRex_to_cdr3list
-from clustcr.input.airr import airr_to_cdr3list
+from clustcr.input.immuneaccess import parse_immuneaccess
+from clustcr.input.tcrex import parse_tcrex
+from clustcr.input.airr import parse_airr
 from os.path import join, dirname, abspath
 
 DIR = dirname(abspath(__file__))
@@ -34,33 +34,34 @@ def read_cdr3(file, data_format):
     Import function to read and parse rep-seq data of various formats.
     """
     if data_format.lower()=='immuneaccess':
-        return immuneACCESS_to_cdr3list(file)
+        return parse_immuneaccess(file)
     elif data_format.lower()=='airr':
-        return airr_to_cdr3list(file)
+        return parse_airr(file)
     elif data_format.lower()=='tcrex':
-        return TCRex_to_cdr3list(file)
+        return parse_tcrex(file)
     else:
         print(f'Unrecognised format: {format}')
         
 
-def metarepertoire_cdr3(directory, data_format, n_sequences=10 ** 6):
+def metarepertoire(directory, data_format, out_format='CDR3', n_sequences=10**6):
     files = os.listdir(directory)
     random.shuffle(files)
+    
     if data_format.lower()=='immuneaccess':
-        meta = immuneACCESS_to_cdr3list(join(directory, files[0]))
+        meta = parse_immuneaccess(join(directory, files[0]), out_format=out_format)
     elif data_format.lower()=='airr':
-        meta = airr_to_cdr3list(join(directory, files[0]))
+        meta = parse_airr(join(directory, files[0]), out_format=out_format)
     elif data_format.lower()=='tcrex':
-        meta = TCRex_to_cdr3list(join(directory, files[0]))
+        meta = parse_tcrex(join(directory, files[0]), out_format=out_format)
 
     for file in files[1:]:
         file = join(directory, file)
         if data_format.lower()=='immuneaccess':
-            meta = pd.concat([meta, immuneACCESS_to_cdr3list(file)])
+            meta = pd.concat([meta, parse_immuneaccess(file, out_format=out_format)])
         elif data_format.lower()=='airr':
-            meta = pd.concat([meta, airr_to_cdr3list(file)])
+            meta = pd.concat([meta, parse_airr(file)])
         elif data_format.lower()=='tcrex':
-            meta = pd.concat([meta, TCRex_to_cdr3list(file)])
+            meta = pd.concat([meta, parse_tcrex(file)])
         meta.drop_duplicates(inplace=True)
         if len(meta) > n_sequences:
             return meta.sample(n_sequences)
@@ -95,12 +96,3 @@ def vdjdb_tcrdist_small(q=1):
 
 def vdjdb_epitopes_small(q=1):
     return vdjdb_to_epitopedata(vdjdb_location, q=q).drop_duplicates()
-
-
-def metarepertoire_gliph2(location, n_sequences=10 ** 6):
-    return construct_metarepertoire(location, n_sequences=n_sequences)
-
-
-def metarepertoire_tcrdist(location, n_sequences=10 ** 6):
-    metarepertoire = construct_metarepertoire(location, n_sequences=n_sequences)
-    return metarepertoire.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'})

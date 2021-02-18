@@ -1,13 +1,10 @@
 import pandas as pd
-import os
-import random
-from os.path import join
 
-from .tools import path_in_data, imgt_v_genes
-from clustcr.input.adaptive_to_imgt import adaptive_to_imgt_human
+from .tools import imgt_v_genes
+from .adaptive_to_imgt import adaptive_to_imgt_human
 
 
-def parse_immuneACCESS(filename, separator='\t'):
+def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
     """
     Parse data in the immuneACCESS format.
     """
@@ -46,30 +43,10 @@ def parse_immuneACCESS(filename, separator='\t'):
     df.drop_duplicates(inplace=True)
     df['subject'] = [filename.split('/')[-1].replace('.tsv', '')] * len(df)
     df['count'] = df['count'] / 100
-
-    return df
-
-
-def immuneACCESS_to_gliph2(filename):
-    return parse_immuneACCESS(path_in_data(filename))
-
-
-def immuneACCESS_to_cdr3list(filename):
-    prepared_data = parse_immuneACCESS(filename)
-    return prepared_data.CDR3
-
-
-def construct_metarepertoire(directory, n_sequences=10 ** 6):
-    files = os.listdir(directory)
-    random.shuffle(files)
-    meta = parse_immuneACCESS(join(directory, files[0]))
-
-    for file in files[1:]:
-        file = join(directory, file)
-        meta = pd.concat([meta, parse_immuneACCESS(file)])
-        meta.drop_duplicates(inplace=True)
-        if len(meta) > n_sequences:
-            return meta.sample(n_sequences)
-
-    print(f'Metarepertoire: less sequences found than wanted ({len(meta)} vs {n_sequences})')
-    return meta
+    
+    if out_format.upper() == 'CDR3':
+        return pd.Series(df.CDR3.unique())
+    elif out_format.upper() == 'GLIPH2':
+        return df
+    elif out_format.upper() == 'TCRDIST':
+        return df.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'})

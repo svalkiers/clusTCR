@@ -152,7 +152,7 @@ class TrainModel:
         return self._data_to_ml_format(labels, s)
 
          
-    def fit(self):
+    def fit_data(self):
         """
         Fit your model to the data.
         """
@@ -167,7 +167,7 @@ class TrainModel:
                                             min_samples_leaf=3, min_samples_split=3, bootstrap=False,  
                                             max_depth=100, max_features='sqrt', n_jobs=-1) 
          
-        return classifier.fit(X, y)
+        return classifier.fit(X, y), X, y
      
      
     def evaluate(self, location=None):
