@@ -25,13 +25,15 @@ def profile_matrix(sequences : list):
         # On the rare occasion that a cluster contains sequences of inequal length.
         # Typically, there is/are only one (or very few) sequence(s) that differ from the avg. CDR3 length in the cluster.
         # Therefore, we use the length of the highest proportion of sequences as the standard, and delete all others.
-        s = []
-        for i in sequences:
-            s.append(len(i))
-        k = pd.Series(s).value_counts().index[0] # Standard cluster length
-        for j in sequences:
-            if len(j) != k:
-                del sequences[sequences.index(j)] # Delete all sequences that differ from k in length.
+	s = []
+	for i in sequences:
+	    s.append(len(i))
+	k = pd.Series(s).value_counts().index[0] # Standard cluster length
+	todel = []
+	for j in sequences:
+	    if len(j) != k:
+		todel.append(j) # Delete all sequences that differ from k in length.
+	sequences = [seq for seq in sequences if seq not in todel]
 
     # Initiate profile matrix with zeros
     profile = {}
