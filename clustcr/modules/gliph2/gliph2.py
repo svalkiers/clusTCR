@@ -43,4 +43,4 @@ def GLIPH2(data, outfile=None):
         print('Saving output to: \n --> {}'.format(outfile))
         nodelist.to_csv(outfile, sep='\t', index=False)
 
-    return nodelist
+    return nodelist, t

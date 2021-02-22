@@ -31,4 +31,4 @@ def iSMART(data, outfile=None):
         print('Saving output to: \n --> {}'.format(outfile))
         clusters.to_csv(outfile, sep='\t', index=False)
 
-    return clusters
+    return clusters, t
