@@ -18,6 +18,20 @@ def profile_matrix(sequences : list):
 
     # Amino acid alphabet
     alphabet = AALPHABET
+    
+    # Make sure to proceed only if all sequences in the cluster have equal length
+    if all(len(seq) == len(sequences[0]) for seq in sequences) is False:
+        
+        # On the rare occasion that a cluster contains sequences of inequal length.
+        # Typically, there is/are only one (or very few) sequence(s) that differ from the avg. CDR3 length in the cluster.
+        # Therefore, we use the length of the highest proportion of sequences as the standard, and delete all others.
+        s = []
+        for i in sequences:
+            s.append(len(i))
+        k = pd.Series(s).value_counts().index[0] # Standard cluster length
+        for j in sequences:
+            if len(j) != k:
+                del sequences[sequences.index(j)] # Delete all sequences that differ from k in length.
 
     # Initiate profile matrix with zeros
     profile = {}
