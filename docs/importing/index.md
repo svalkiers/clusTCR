@@ -50,10 +50,18 @@ data = read_cdr3('immuneACCESS_file.csv', format='immuneaccess')
 
 #### Creating metarepertoires
 
-*clusTCR* offers a functionality that can be used to create (large) metarepertoire files from a directory containing TCR repertoires. To create a metarepertoire, you must specificy the directory in which the files are located, as well as the input format and desired size of the metarepertoire.
+*clusTCR* offers a functionality that can be used to create (large) metarepertoire files from a directory containing TCR repertoires. To create a metarepertoire, you must specificy the directory in which the files are located, as well as the input format, output format and desired size of the metarepertoire. *clusTCR* currently offers three output formats:
+
+| Format  | Info                                                         |
+| ------- | ------------------------------------------------------------ |
+| CDR3    | Provides a `pandas.Series` of unique CDR3 sequences.         |
+| GLIPH2  | Provides a `pandas.DataFrame` in the required input format for *GLIPH2*. |
+| tcrdist | Provides a `pandas.DataFrame` in the required input format for *tcrdist3*. |
+
+Here is an example of how this function can be used to sample one million unique CDR3 sequences from an immuneACCESS data set:
 
 ```python
-metarepertoire = metarepertoire_cdr3('immuneACCESS_file_directory/', format='immuneaccess', n_sequences=10**6)
+meta = metarepertoire('immuneACCESS_file_directory/', data_format='immuneaccess', out_format='CDR3', n_sequences=10**6)
 ```
 
-This will return a list of (1 million) unique CDR3 sequences sampled from repertoires in the specified directory.
+This will return a `pandas.Series` of (1 million) unique CDR3 sequences sampled from repertoires in the specified directory.
