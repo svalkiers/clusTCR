@@ -9,7 +9,7 @@ nav_order: 3
 Data import functions are provided within the `datasets` method. A method for reading common rep-seq formats is also provided within clusTCR. Additionally, *clusTCR* offers a function that randomly samples sequences from a data set to construct metarepertoires.
 
 ```python
-from clustcr import datasets, read_cdr3, metarepertoire_cdr3
+from clustcr import datasets, read_cdr3, metarepertoire
 ```
 
 ### Built-in data
