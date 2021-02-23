@@ -39,8 +39,6 @@ output = clustering.fit(cdr3)
 
 ### ClusteringResult
 
-The resulting output is a ClusteringResult with the following methods 
-
 #### Dataframe
 
 A dataframe containing the clusters can be accessed 
@@ -66,7 +64,7 @@ output.clusters_df
 #### CSV
 
 To quickly store the clusters to file, the `write_to_csv` method can be used.
-A path is optional, as *clusTCR* will otherwise save it in the current directory.
+A path is optional, by default *clusTCR* will save it in the current directory.
 ```python
 output.write_to_csv()
 ```
