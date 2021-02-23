@@ -87,17 +87,16 @@ class TrainModel:
     will calculate the features of the clustering data provided.
     """
      
-    def __init__(self, clusters, epitope_data, features=None): 
+    def __init__(self, clusters, epitope_data, features=None):
          
-        self.clusters = clusters 
+        self.clusters = clusters
         self.epitopes = epitope_data 
          
         if features is not None: 
             self.features = features 
-        else: 
-            f = FeatureGenerator(self.clusters) 
-            self.features = f.compute_features()
-    
+        else:
+            self.features = FeatureGenerator(self.clusters).get_features(compute_pgen=True)
+
     
     def _generate_labels(self):
         
@@ -207,7 +206,6 @@ class TrainModel:
         if location is not None:
             fig.savefig(location + 'cq_predict_roc.eps', format='eps')
 
-    
     def save(self, model, filename):
         """
         Dump custom model into .pkl file.

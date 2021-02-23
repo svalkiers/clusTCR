@@ -27,13 +27,6 @@ class ClusteringTest(TestBase):
             for method in ['two-step', 'faiss', 'mcl']:
                 Clustering(method=method, faiss_cluster_size=size).fit(self.cdr3)
 
-    def test_metrics(self):
-        metrics = Clustering().fit(self.cdr3).metrics(self.epitopes)
-        metrics.purity()
-        metrics.consistency()
-        metrics.retention()
-        metrics.purity_90()
-
     def test_batch_clustering(self):
         vdj = datasets.vdjdb_cdr3()
         max_sequence_size = vdj.str.len().max()
@@ -49,5 +42,22 @@ class ClusteringTest(TestBase):
         for clusters in clustering.batch_cluster():
             df = clusters.clusters_df
         clustering.batch_cleanup()
+
+    def test_metrics(self):
+        metrics = Clustering().fit(self.cdr3).metrics(self.epitopes)
+        metrics.purity()
+        metrics.consistency()
+        metrics.retention()
+        metrics.purity_90()
+        metrics.summary()
+
+    def test_summary(self):
+        Clustering().fit(self.cdr3).summary()
+
+    def test_write_to_csv(self):
+        Clustering().fit(self.cdr3).write_to_csv()
+
+    def test_cluster_contents(self):
+        Clustering().fit(self.cdr3).cluster_contents()
 
 
