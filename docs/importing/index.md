@@ -34,9 +34,9 @@ You can import rep-seq data from different sources using the `read_cdr3()` metho
 
 | Format         | Method                                   | Info                                                         |
 | -------------- | ---------------------------------------- | ------------------------------------------------------------ |
-| immuneACCESS   | `read_cdr3(file, format='immuneaccess')` | Version automatically detected. More info about the immuneACCESS format: https://clients.adaptivebiotech.com/immuneaccess. |
-| AIRR standards | `read_cdr3(file, format='airr')`         | More info about the AIRR standards data representation: https://docs.airr-community.org/en/stable/datarep/rearrangements.html. |
-| TCRex          | `read_cdr3(file, format='tcrex')`        | More info about the TCRex format: https://tcrex.biodatamining.be/instructions/. |
+| immuneACCESS   | `read_cdr3(file, data_format='immuneaccess')` | Version automatically detected. More info about the immuneACCESS format: https://clients.adaptivebiotech.com/immuneaccess. |
+| AIRR standards | `read_cdr3(file, data_format='airr')`         | More info about the AIRR standards data representation: https://docs.airr-community.org/en/stable/datarep/rearrangements.html. |
+| TCRex          | `read_cdr3(file, data_format='tcrex')`        | More info about the TCRex format: https://tcrex.biodatamining.be/instructions/. |
 
 Rep-seq files can be easily imported from the `.read_cdr3()` method. This data is not provided within the package, hence you will have to refer to the directory in which you have saved your files. Specify the input format and *clusTCR* will return a `pd.Series` of all unique CDR3 sequences from that file.
 
@@ -45,7 +45,7 @@ Rep-seq files can be easily imported from the `.read_cdr3()` method. This data i
 To parse and extract CDR3 sequences from a single file, you can use the `read_cdr3()` function.  This function takes two argument: the path to the file and the input format. For example, importing an immuneACCESS file might look something like this.
 
 ```python
-data = read_cdr3('immuneACCESS_file.csv', format='immuneaccess')
+data = read_cdr3('immuneACCESS_file.csv', data_format='immuneaccess')
 ```
 
 #### Creating metarepertoires
