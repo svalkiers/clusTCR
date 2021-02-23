@@ -4,9 +4,6 @@ from clustcr import datasets, read_cdr3, metarepertoire
 
 class InputTest(TestBase):
 
-    def setUp(self):
-        pass
-
     def test_testing_data(self):
         datasets.test_cdr3()
         datasets.test_epitopes()

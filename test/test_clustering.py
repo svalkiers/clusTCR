@@ -18,8 +18,9 @@ class ClusteringTest(TestBase):
         Clustering(method='faiss').fit(self.cdr3)
 
     def test_multiprocessing(self):
-        for method in ['two-step', 'faiss', 'mcl']:
-            Clustering(method=method, n_cpus='all').fit(self.cdr3)
+        for cpu in [-1, 0, 1, 2, 'all']:
+            for method in ['two-step', 'faiss', 'mcl']:
+                Clustering(method=method, n_cpus=cpu).fit(self.cdr3)
 
     def test_faiss_cluster_size(self):
         for size in range(2, 6003, 2000):
@@ -32,4 +33,21 @@ class ClusteringTest(TestBase):
         metrics.consistency()
         metrics.retention()
         metrics.purity_90()
+
+    def test_batch_clustering(self):
+        vdj = datasets.vdjdb_cdr3()
+        max_sequence_size = vdj.str.len().max()
+        train = vdj.sample(2000)
+        times = 3
+        size_per_time = 3000
+        clustering = Clustering(faiss_training_data=train,
+                                fitting_data_size=times * size_per_time,
+                                max_sequence_size=max_sequence_size)
+        for i in range(times):
+            sample = vdj.sample(size_per_time)
+            clustering.batch_precluster(sample)
+        for clusters in clustering.batch_cluster():
+            df = clusters.clusters_df
+        clustering.batch_cleanup()
+
 
