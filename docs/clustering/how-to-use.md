@@ -37,14 +37,40 @@ cdr3 = datasets.test_cdr3()
 output = clustering.fit(cdr3)
 ```
 
-The resulting output is a ClusteringResult object, where a dataframe containing the clusters can be accessed 
+### ClusteringResult
+
+The resulting output is a ClusteringResult with the following methods 
+
+#### Dataframe
+
+A dataframe containing the clusters can be accessed 
 
 ```python
-print(output.clusters_df)
+output.clusters_df
 ```
 
-Alternatively, you can explore the clustering results by executing the `.summary()` on the ClusteringResult object. This will provide you with a dataframe that contains the cluster index, number of sequences in the cluster, and a consensus motif for that cluster. Shared dominance of amino acids is indicated by square brackets (' [ ] ').  If there is no dominant amino acid, the position is denoted by a single dot (' . ').
+| actual   | baseline | metric      |
+| :------- | :------- | :---------- |
+| 0.225184 | 0.225184 | retention   |
+| 0.872675 | 0.346209 | purity      |
+| 0.727723 | 0.019802 | purity_90   |
+| 0.360515 | 0.123033 | consistency |
+
+#### Summary
+
+You can explore the clustering results by executing the `.summary()` on the ClusteringResult object. 
+This will provide you with a dataframe that contains the cluster index, number of sequences in the cluster, and a consensus motif for that cluster. 
+Shared dominance of amino acids is indicated by square brackets (' [ ] ').  
+If there is no dominant amino acid, the position is denoted by a single dot (' . ').
 
 ```python
-print(output.summary())
+output.summary()
 ```
+
+| actual   | baseline | metric      |
+| :------- | :------- | :---------- |
+| 0.225184 | 0.225184 | retention   |
+| 0.872675 | 0.346209 | purity      |
+| 0.727723 | 0.019802 | purity_90   |
+| 0.360515 | 0.123033 | consistency |
+
