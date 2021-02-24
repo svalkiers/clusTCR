@@ -1,5 +1,5 @@
 from base import TestBase
-from clustcr import datasets, Clustering, ClusterAnalysis, TrainModel
+from clustcr import datasets, Clustering, ClusterAnalysis, ModelTraining
 
 
 class ClusteringTest(TestBase):
@@ -12,17 +12,17 @@ class ClusteringTest(TestBase):
     def make_features(self):
         return self.clustering_result.compute_features(compute_pgen=True)
 
-    # def test_feature_generation(self):
-    #     self.make_features()
-    #
-    # def test_pca(self):
-    #     ClusterAnalysis(self.make_features()).pca()
-    #
-    # def test_prediction(self):
-    #     ClusterAnalysis(self.make_features()).predict_quality()
+    def test_feature_generation(self):
+        self.make_features()
+
+    def test_pca(self):
+        ClusterAnalysis(self.make_features()).pca()
+
+    def test_prediction(self):
+        ClusterAnalysis(self.make_features()).predict_quality()
 
     def test_train_model(self):
-        model = TrainModel(self.clustering_result.clusters_df, self.epitopes)
+        model = ModelTraining(self.clustering_result.clusters_df, self.epitopes)
         fitted = model.fit_data()
         model.evaluate()
         model.save(fitted, 'test.pkl')
