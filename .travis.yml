@@ -29,12 +29,12 @@ script:
   - cd test
   - python3 -m unittest discover -s ./ -p '*.py'
 
-after_success:
-  - if [[ $TRAVIS_BRANCH == "master" ]]; then
-        echo foo
-        echo bar
-#        conda config --set anaconda_upload yes
-#        conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
-#        conda build conda/clustcr-gpu/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
-    fi
+#after_success:
+#  - if [[ $TRAVIS_BRANCH == "master" ]]; then
+#        echo foo
+#        echo bar
+##        conda config --set anaconda_upload yes
+##        conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
+##        conda build conda/clustcr-gpu/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
+#    fi
 
