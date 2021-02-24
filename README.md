@@ -15,3 +15,5 @@ Finally run
 ```
 jekyll serve
 ```
+
+That's it!
