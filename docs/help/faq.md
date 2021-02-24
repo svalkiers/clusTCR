@@ -7,15 +7,15 @@ parent: Help
 
 ##  FAQ
 
-### Is *clusTCR* available for Windows users?
+### Is clusTCR available for Windows users?
 
-*clusTCR* relies upon the Faiss library, which is officially only supported for OSX and Linux. Windows users may install a [WSL](https://ubuntu.com/wsl) in order to properly run *clusTCR*.
+clusTCR relies upon the Faiss library, which is officially only supported for OSX and Linux. Windows users may install a [WSL](https://ubuntu.com/wsl) in order to properly run clusTCR.
 
 
 
 ### I wanna use the *clustcr-gpu* version, but I don't know if my device has the correct hardware requirements. Is there a way to check this?
 
-*clustcr-gpu* relies on the [Faiss library](https://github.com/facebookresearch/faiss), which on its turn relies on the cudatoolkit.Only specific GPUs with CUDA-compatibility can be used for *clusTCR*'s GPU function. First, you will need to find out which graphics hardware is available in your device. Depending on your OS, you will need to do one of the following things:
+*clustcr-gpu* relies on the [Faiss library](https://github.com/facebookresearch/faiss), which on its turn relies on the cudatoolkit.Only specific GPUs with CUDA-compatibility can be used for clusTCR's GPU function. First, you will need to find out which graphics hardware is available in your device. Depending on your OS, you will need to do one of the following things:
 
 #### > Linux
 
@@ -34,3 +34,19 @@ For Mac users, go to *Apple menu > About this Mac > System Report... > Hardware 
 Windows users can find graphics card information through *Start > Device Manager > Display adapters*.
 
 Now that you have identified the type of GPU in your device, you need to check its compatibilities. *clustcr-gpu* is only supported for NVIDIA GPUs with CUDA capabilities of minimum compute capability 3.5 ([source](https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU)). To check if your GPU is compatible, visit the [NVIDIA website](https://developer.nvidia.com/cuda-gpus).
+
+
+
+### Multiprocessing gives me RuntimeErrors. How can I solve this issue?
+
+Some users have reported *RuntimeErrors* when running clusTCR on multiple CPUs. While we are looking into this issue, there is a temporary solution to the problem. Inserting a `if __name__ == '__main__':` will prevent the creation of subprocesses recursively, thereby avoiding potential *RuntimeErrors*. Here is a practical example of how you would use this when working with clusTCR:
+
+```python
+from clustcr import datasets, Clustering
+
+if __name__ == '__main__':
+     data = datasets.test_cdr3() # Importing some test data
+     clustering = Clustering(n_cpus=4) # Multiprocessing with 4 CPUs
+     clustering.fit(data) # Fit data to Clustering object
+```
+

@@ -54,7 +54,19 @@ That's it! You have successfully clustered your RepSeq file with clusTCR. To ret
 result.clusters_df
 ```
 
-
+|       | CDR3             | cluster |
+| :---- | :--------------- | :------ |
+| 0     | CASSYSRASSGNTIYF | 0       |
+| 1     | CASSYSRQSSGNTIYF | 0       |
+| 2     | CASSYSGQGSGNTIYF | 0       |
+| 3     | CASSYSRQGSGNTIYF | 0       |
+| 4     | CASSYSRPSSGNTIYF | 0       |
+| ...   | ...              | ...     |
+| 25065 | CASSYGSSSTDTQYF  | 4516    |
+| 25066 | CASSPQWATGNTIYF  | 4517    |
+| 25067 | CSSSPQWATGNTIYF  | 4517    |
+| 25068 | CATSRDQGGYNEQFF  | 4518    |
+| 25069 | CATSRDRGGYNEQFF  | 4518    |
 
 ...or directly save the clusters to a file using the `write_to_csv()` method. This will require you to specify a path to where the results should be saved, else they will be stored in the current working directory with the generic *clusTCR_clusters.csv* file name.
 
