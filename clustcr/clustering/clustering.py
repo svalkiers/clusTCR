@@ -203,7 +203,7 @@ class Clustering:
             else:
                 return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
         elif self.second_step == 'GLIPH2':
-            return ClusteringResult(GLIPH2_from_preclusters(super_clusters, n_cpus=1))
+            return ClusteringResult(GLIPH2_from_preclusters(super_clusters, n_cpus=self.n_cpus))
         elif self.second_step == 'ISMART':
             return ClusteringResult(iSMART_from_preclusters(super_clusters, n_cpus=self.n_cpus))
 

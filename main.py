@@ -39,7 +39,7 @@ def plot(metric_lambda, metric_name):
 
 
 
-print(gliph2_clustcr.fit(datasets.vdjdb_cdr3()).clusters_df)
+print(gliph2_clustcr.fit(datasets.vdjdb_gliph2()).clusters_df)
 
 # plot(lambda x: x.purity()[0], 'Purity')
 # plot(lambda x: x.consistency()[0], 'Consistency')

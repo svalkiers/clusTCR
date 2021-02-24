@@ -3,23 +3,42 @@ import time
 import pandas as pd
 import multiprocessing
 import parmap
-from os.path import join, dirname, abspath
+from os.path import join, dirname, abspath, exists
 from subprocess import call
+from shutil import rmtree
+from os import mkdir
+import random
 
 DIR = dirname(abspath(__file__))
 GLIPH2_PATH = join(DIR, 'lib')
+GLIPH2_EXEC = join(GLIPH2_PATH, 'irtools.centos')
 
 
 def GLIPH2(data, outfile=None):
-    os.chdir(GLIPH2_PATH)
-
-    data.to_csv('metarepertoire.txt', index=False, header=False, sep='\t')
+    tmp_directory = join(DIR, 'gliph2_tmp' + str(random.randint(0, 10 ** 8)))
+    if exists(tmp_directory):
+        rmtree(tmp_directory)
 
     print('Clustering {} sequences with GLIPH2.'.format(len(data)))
+    call(f'cp -r {GLIPH2_PATH} {tmp_directory}', shell=True)
+    call(f'chmod a+x {join(tmp_directory, "irtools.centos")}', shell=True)
+
+    input_file = join(tmp_directory, 'metarepertoire.txt')
+    data.to_csv(input_file, index=False, header=False, sep='\t')
+
+    with open(join(GLIPH2_PATH, 'parameters_metarepertoire')) as f:
+        parameters = f.read()
+        parameters = parameters.replace('ref_CD48_v2.0.fa', join(DIR, 'ref/ref_CD48_v2.0.fa'))
+        parameters = parameters.replace('ref_V_CD48_v2.0.txt', join(DIR, 'ref/ref_V_CD48_v2.0.txt'))
+        parameters = parameters.replace('ref_L_CD48_v2.0.txt', join(DIR, 'ref/ref_L_CD48_v2.0.txt'))
+
+    parameters_file = join(tmp_directory, 'parameters_metarepertoire')
+    with open(parameters_file, 'w') as f:
+        f.write(parameters)
 
     # Perform gliph2 algorithm on test sequences
     t0 = time.time()
-    call('./irtools.centos -c parameters_metarepertoire', shell=True)
+    call(f'cd {tmp_directory} && ./irtools.centos -c {parameters_file}', shell=True)
     t1 = time.time()
     t = t1 - t0
 
@@ -28,7 +47,7 @@ def GLIPH2(data, outfile=None):
     # Reformat gliph2 clustering results
     clusters = {}
     nodelist = {'CDR3': [], 'cluster': []}
-    with open('metarepertoire_output_cluster.txt', 'r') as f:
+    with open(join(tmp_directory, 'metarepertoire_output_cluster.txt'), 'r') as f:
         results = f.read().splitlines()
     c = 0
     for line in results:
@@ -46,6 +65,7 @@ def GLIPH2(data, outfile=None):
         print('Saving output to: \n --> {}'.format(outfile))
         nodelist.to_csv(outfile, sep='\t', index=False)
 
+    rmtree(tmp_directory)
     return nodelist, t
 
 
