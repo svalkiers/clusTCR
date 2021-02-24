@@ -79,7 +79,7 @@ class ClusterAnalysis:
         return predictions 
      
  
-class TrainModel:
+class ModelTraining:
     """
     Train your own classification model for predicting clustering quality.
     This requires information about cluster, epitopes and the features
