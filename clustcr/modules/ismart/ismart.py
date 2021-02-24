@@ -2,7 +2,8 @@ import os
 import time
 import pandas as pd
 from os.path import join, dirname, abspath
-
+import multiprocessing
+import parmap
 
 DIR = dirname(abspath(__file__))
 ISMART_PATH = join(DIR, 'lib')
@@ -25,6 +26,7 @@ def iSMART(data, outfile=None):
     with open('input_clustered_v3.txt', 'r') as f:
         clusters = f.read().splitlines()[3:]
         clusters = pd.DataFrame([x.split('\t') for x in clusters], columns=['CDR3', 'cluster'])
+        clusters.cluster = pd.to_numeric(clusters.cluster, errors='coerce')
 
     # Save output to correct destination
     if outfile:
@@ -32,3 +34,17 @@ def iSMART(data, outfile=None):
         clusters.to_csv(outfile, sep='\t', index=False)
 
     return clusters, t
+
+
+def iSMART_from_preclusters(preclusters, n_cpus):
+    with multiprocessing.Pool(n_cpus) as pool:
+        clusters = parmap.map(iSMART,
+                              preclusters,
+                              pm_parallel=True,
+                              pm_pool=pool)
+    for c in range(len(clusters)):
+        clusters[c] = clusters[c][0]
+        if c != 0:
+            clusters[c]['cluster'] += clusters[c - 1]['cluster'].max() + 1
+    return pd.concat(clusters, ignore_index=True)
+

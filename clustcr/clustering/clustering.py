@@ -15,21 +15,21 @@ from .metrics import Metrics
 class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
-        
+
     def summary(self):
         motifs = FeatureGenerator(self.clusters_df).clustermotif()
         summ = self.clusters_df.cluster.value_counts().to_frame()
-        summ.rename(columns={'cluster':'size'},inplace=True)
+        summ.rename(columns={'cluster': 'size'}, inplace=True)
         summ = summ.rename_axis('cluster_idx').reset_index()
         summ['motif'] = motifs.values()
         return summ
-    
-    def write_to_csv(self, path=join(getcwd(),'clusTCR_clusters.csv')):
-        return self.clusters_df.to_csv(path,index=False)
+
+    def write_to_csv(self, path=join(getcwd(), 'clusTCR_clusters.csv')):
+        return self.clusters_df.to_csv(path, index=False)
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
-    
+
     def compute_features(self, compute_pgen=True):
         return FeatureGenerator(self.clusters_df).get_features(compute_pgen=compute_pgen)
 
@@ -62,6 +62,7 @@ class Clustering:
 
     def __init__(self,
                  method='two-step',
+                 second_step='mcl',
                  n_cpus: Union[str, int] = 1,
                  use_gpu=False,
                  faiss_cluster_size=5000,
@@ -89,6 +90,7 @@ class Clustering:
         """
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
         self.method = method.upper()
+        self.second_step = second_step.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
@@ -131,7 +133,7 @@ class Clustering:
         clustering.train(cdr3)
         return clustering
 
-    def _faiss(self, cdr3: pd.Series):
+    def _faiss(self, cdr3):
         """
         FAISS clustering method
 
@@ -143,18 +145,36 @@ class Clustering:
             contains the corresponding cluster ids.
         """
         cdr3 = cdr3.reset_index(drop=True)
+        if isinstance(cdr3, pd.DataFrame):
+            sequences = cdr3['CDR3']
+        else:
+            sequences = cdr3
         if self.faiss_clustering is not None:
             clustering = self.faiss_clustering
         else:
-            clustering = self._train_faiss(cdr3)
+            clustering = self._train_faiss(sequences)
 
-        result = clustering.cluster(cdr3)
-        clusters = {"CDR3": [], "cluster": []}
-        for i, cluster in enumerate(result):
-            clusters["CDR3"].append(cdr3[i])
-            clusters["cluster"].append(int(cluster))
+        result = clustering.cluster(sequences)
 
-        return ClusteringResult(pd.DataFrame(clusters))
+        if self.method == 'FAISS' or \
+                (self.method == 'TWO-STEP' and self.second_step == 'MCL'):
+            clusters = {"CDR3": [], "cluster": []}
+            for i, cluster in enumerate(result):
+                clusters["CDR3"].append(sequences[i])
+                clusters["cluster"].append(int(cluster))
+            return ClusteringResult(pd.DataFrame(clusters))
+        else:
+            clusters = {}
+            for i, cluster in enumerate(result):
+                cluster = int(cluster)
+                if cluster not in clusters:
+                    clusters[cluster] = [i]
+                else:
+                    clusters[cluster].append(i)
+            resulting_clusters = []
+            for cluster in clusters.values():
+                resulting_clusters.append(cdr3.iloc[cluster])
+            return resulting_clusters
 
     def _twostep(self, cdr3):
         """
@@ -174,12 +194,18 @@ class Clustering:
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
-
+        from ..modules.gliph2.gliph2 import GLIPH2_from_preclusters
+        from ..modules.ismart.ismart import iSMART_from_preclusters
         super_clusters = self._faiss(cdr3)
-        if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
-        else:
-            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
+        if self.second_step == 'MCL':
+            if self.n_cpus > 1:
+                return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
+            else:
+                return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
+        elif self.second_step == 'GLIPH2':
+            return ClusteringResult(GLIPH2_from_preclusters(super_clusters, n_cpus=1))
+        elif self.second_step == 'ISMART':
+            return ClusteringResult(iSMART_from_preclusters(super_clusters, n_cpus=1))
 
     def batch_precluster(self, cdr3: pd.Series):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'

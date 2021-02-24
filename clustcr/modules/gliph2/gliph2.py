@@ -1,7 +1,10 @@
 import os
 import time
 import pandas as pd
+import multiprocessing
+import parmap
 from os.path import join, dirname, abspath
+from subprocess import call
 
 DIR = dirname(abspath(__file__))
 GLIPH2_PATH = join(DIR, 'lib')
@@ -16,7 +19,7 @@ def GLIPH2(data, outfile=None):
 
     # Perform gliph2 algorithm on test sequences
     t0 = time.time()
-    os.system('./irtools.centos -c parameters_metarepertoire')
+    call('./irtools.centos -c parameters_metarepertoire', shell=True)
     t1 = time.time()
     t = t1 - t0
 
@@ -44,3 +47,18 @@ def GLIPH2(data, outfile=None):
         nodelist.to_csv(outfile, sep='\t', index=False)
 
     return nodelist, t
+
+
+def GLIPH2_from_preclusters(preclusters, n_cpus):
+    with multiprocessing.Pool(n_cpus) as pool:
+        clusters = parmap.map(GLIPH2,
+                              preclusters,
+                              pm_parallel=True,
+                              pm_pool=pool)
+    for c in range(len(clusters)):
+        clusters[c] = clusters[c][0]
+        if c != 0:
+            clusters[c]['cluster'] += clusters[c - 1]['cluster'].max() + 1
+    return pd.concat(clusters, ignore_index=True)
+
+
