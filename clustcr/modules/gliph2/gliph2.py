@@ -38,7 +38,7 @@ def GLIPH2(data, outfile=None):
 
     # Perform gliph2 algorithm on test sequences
     t0 = time.time()
-    call(f'cd {tmp_directory} && ./irtools.centos -c {parameters_file}', shell=True)
+    call(f'cd {tmp_directory} && ./irtools.centos -c parameters_metarepertoire', shell=True)
     t1 = time.time()
     t = t1 - t0
 

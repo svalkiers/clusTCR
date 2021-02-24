@@ -3,10 +3,7 @@ from clustcr.clustering.clustering import ClusteringResult
 from clustcr.modules.gliph2 import gliph2
 from clustcr.modules.ismart import ismart
 import matplotlib.pyplot as plt
-
-ismart_clustcr = Clustering(second_step='ismart', n_cpus='all')
-gliph2_clustcr = Clustering(second_step='gliph2', n_cpus='all')
-mcl = Clustering(second_step='mcl')
+import time
 
 
 def plot(metric_lambda, metric_name):
@@ -20,9 +17,9 @@ def plot(metric_lambda, metric_name):
         data = datasets.vdjdb_cdr3_small(q=q)
         x.append(len(data))
 
-        ismart_clustcr_y.append(metric_lambda(ismart_clustcr.fit(data).metrics(epitopes)))
-        gliph2_clustcr_y.append(metric_lambda(gliph2_clustcr.fit(data_gliph2).metrics(epitopes)))
-        mcl_y.append(metric_lambda(mcl.fit(data).metrics(epitopes)))
+        ismart_clustcr_y.append(metric_lambda(Clustering(second_step='ismart', n_cpus='all').fit(data).metrics(epitopes)))
+        gliph2_clustcr_y.append(metric_lambda(Clustering(second_step='gliph2', n_cpus='all').fit(data_gliph2).metrics(epitopes)))
+        mcl_y.append(metric_lambda(Clustering(second_step='mcl').fit(data).metrics(epitopes)))
         ismart_y.append(metric_lambda(ClusteringResult(ismart.iSMART(data)[0]).metrics(epitopes)))
         gliph2_y.append(metric_lambda(ClusteringResult(gliph2.GLIPH2(data_gliph2)[0]).metrics(epitopes)))
 
@@ -38,13 +35,51 @@ def plot(metric_lambda, metric_name):
     plt.show()
 
 
-
-print(gliph2_clustcr.fit(datasets.vdjdb_gliph2()).clusters_df)
-
-# plot(lambda x: x.purity()[0], 'Purity')
-# plot(lambda x: x.consistency()[0], 'Consistency')
-# plot(lambda x: x.retention(), 'Retention')
+def timer(func):
+    start = time.time()
+    func()
+    return time.time() - start
 
 
+def plot_time():
+    plt.figure()
+    x = []
 
+    ismart_y, gliph2_y, ismart_clustcr_y, ismart_par_clustcr_y, gliph2_clustcr_y, gliph2_par_clustcr_y, mcl_y = [], [], [], [], [], [], []
+    for q in [0, 1, 2]:
+        epitopes = datasets.vdjdb_epitopes_small(q=q)
+        data_gliph2 = datasets.vdjdb_gliph2_small(q=q)
+        data = datasets.vdjdb_cdr3_small(q=q)
+        x.append(len(data))
+
+        ismart_clustcr_y.append(
+            timer(lambda: Clustering(second_step='ismart').fit(data).metrics(epitopes)))
+        gliph2_clustcr_y.append(
+            timer(lambda: Clustering(second_step='gliph2').fit(data_gliph2).metrics(epitopes)))
+        ismart_par_clustcr_y.append(
+            timer(lambda: Clustering(second_step='ismart', n_cpus='all').fit(data).metrics(epitopes)))
+        gliph2_par_clustcr_y.append(
+            timer(lambda: Clustering(second_step='gliph2', n_cpus='all').fit(data_gliph2).metrics(epitopes)))
+        mcl_y.append(timer(lambda: Clustering(second_step='mcl').fit(data).metrics(epitopes)))
+        ismart_y.append(timer(lambda: ClusteringResult(ismart.iSMART(data)[0]).metrics(epitopes)))
+        gliph2_y.append(timer(lambda: ClusteringResult(gliph2.GLIPH2(data_gliph2)[0]).metrics(epitopes)))
+
+    plt.plot(x, ismart_y, label='iSMART', marker='o')
+    plt.plot(x, gliph2_y, label='GLIPH2', marker='o')
+    plt.plot(x, ismart_clustcr_y, label='Two Step iSMART', marker='o')
+    plt.plot(x, gliph2_clustcr_y, label='Two Step GLIPH2', marker='o')
+    plt.plot(x, ismart_par_clustcr_y, label='Two Step iSMART in parallel', marker='o')
+    plt.plot(x, gliph2_par_clustcr_y, label='Two Step GLIPH2 in parallel', marker='o')
+    plt.plot(x, mcl_y, label='Two Step MCL', marker='o')
+    plt.xlabel('Number of input sequences')
+    plt.ylabel('Time (in seconds)')
+    plt.title('Clustering VDJdb - method comparison')
+    plt.legend(loc='best')
+    plt.show()
+
+
+plot_time()
+plot(lambda x: x.purity()[0], 'Purity')
+plot(lambda x: x.consistency()[0], 'Consistency')
+plot(lambda x: x.retention(), 'Retention')
 
