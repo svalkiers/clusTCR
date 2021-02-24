@@ -17,6 +17,7 @@ install:
   - conda update -q conda
   - conda install conda-build anaconda-client
   - conda config --set auto_update_conda no
+#  - conda config --set anaconda_upload yes
   - conda config --add channels pytorch
   - conda config --add channels bioconda
   - conda config --add channels conda-forge
@@ -24,4 +25,6 @@ install:
   - conda install --use-local clustcr
   - conda info -a
 
-scripts: echo foo
+scripts:
+  - cd test
+  - python3 -m unittest discover -s ./ -p '*.py'
