@@ -8,8 +8,9 @@ On a standard machine*, clusTCR can cluster **1 million CDR3 sequences in under 
 Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255.35.37:8080/),  [iSMART](https://github.com/s175573/iSMART) and [tcrdist](https://github.com/kmayerb/tcrdist3)), clusTCR shows comparable clustering quality, but provides a steep increase in speed and scalability.  
 
 <p align="center">
-  <img src="results/figures/workflow.eps" alt="drawing" width="800" />
+  <img src="results/figures/workflow.png" alt="drawing" width="800" />
 </p>
+
 
 
 
