@@ -205,7 +205,7 @@ class Clustering:
         elif self.second_step == 'GLIPH2':
             return ClusteringResult(GLIPH2_from_preclusters(super_clusters, n_cpus=1))
         elif self.second_step == 'ISMART':
-            return ClusteringResult(iSMART_from_preclusters(super_clusters, n_cpus=1))
+            return ClusteringResult(iSMART_from_preclusters(super_clusters, n_cpus=self.n_cpus))
 
     def batch_precluster(self, cdr3: pd.Series):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'

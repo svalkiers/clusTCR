@@ -4,8 +4,8 @@ from clustcr.modules.gliph2 import gliph2
 from clustcr.modules.ismart import ismart
 import matplotlib.pyplot as plt
 
-ismart_clustcr = Clustering(second_step='ismart')
-gliph2_clustcr = Clustering(second_step='gliph2')
+ismart_clustcr = Clustering(second_step='ismart', n_cpus='all')
+gliph2_clustcr = Clustering(second_step='gliph2', n_cpus='all')
 mcl = Clustering(second_step='mcl')
 
 
@@ -38,9 +38,12 @@ def plot(metric_lambda, metric_name):
     plt.show()
 
 
-plot(lambda x: x.purity()[0], 'Purity')
-plot(lambda x: x.consistency()[0], 'Consistency')
-plot(lambda x: x.retention(), 'Retention')
+
+print(gliph2_clustcr.fit(datasets.vdjdb_cdr3()).clusters_df)
+
+# plot(lambda x: x.purity()[0], 'Purity')
+# plot(lambda x: x.consistency()[0], 'Consistency')
+# plot(lambda x: x.retention(), 'Retention')
 
 
 
