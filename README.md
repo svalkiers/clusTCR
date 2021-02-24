@@ -1,4 +1,4 @@
-# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr) [![license](https://anaconda.org/svalkiers/clustcr/badges/license.svg)](https://anaconda.org/svalkiers/clustcr)
+# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr)
 
 A two-step clustering approach that combines the speed of the [Faiss Clustering Library](https://github.com/facebookresearch/faiss) with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/)
 
@@ -8,8 +8,10 @@ On a standard machine*, clusTCR can cluster **1 million CDR3 sequences in under 
 Compared to other state-of-the-art clustering algorithms ([GLIPH2](http://50.255.35.37:8080/),  [iSMART](https://github.com/s175573/iSMART) and [tcrdist](https://github.com/kmayerb/tcrdist3)), clusTCR shows comparable clustering quality, but provides a steep increase in speed and scalability.  
 
 <p align="center">
-  <img src="results/figures/workflow.jpg" alt="drawing" width="800" />
+  <img src="results/figures/workflow.png" alt="drawing" width="800" />
 </p>
+
+
 
 
 ## [Documentation](https://svalkiers.github.io/clusTCR/) & Install

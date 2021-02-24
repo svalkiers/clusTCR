@@ -20,7 +20,7 @@ def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
         df = pd.read_csv(filename, sep=separator)
         df = df[df['frame_type'] == 'In']
         df = df[['amino_acid', 'v_gene', 'productive_frequency']]
-        df = df[df['vGeneName'] != 'unresolved']
+        df = df[df['v_gene'] != 'unresolved']
         df.rename(columns={'amino_acid': 'CDR3',
                            'v_gene': 'V',
                            'productive_frequency': 'count'},
