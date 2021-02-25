@@ -28,6 +28,7 @@ script:
   - python3 -m unittest discover -s ./ -p '*.py'
 
 after_success:
+  - cd ..
   - test $TRAVIS_BRANCH = "main" && test $TRAVIS_PULL_REQUEST = "false" &&
     conda config --set anaconda_upload yes &&
     conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN &&
