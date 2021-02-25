@@ -1,7 +1,7 @@
 ---
 layout: default
 title: About
-nav_order: 7
+nav_order: 8
 has_children: False
 ---
 
@@ -20,5 +20,5 @@ The development of clusTCR was supported by the Research Foundation Flanders (FW
 ClusTCR is currently out in preprint on bioRxiv:
 
 ```
-Sebastiaan Valkiers, Max Van Houcke, Kris Laukens, Pieter Meysman bioRxiv 2021.02.22.432291; doi: https://doi.org/10.1101/2021.02.22.432291
+Sebastiaan Valkiers, Max Van Houcke, Kris Laukens, Pieter Meysman. bioRxiv 2021.02.22.432291; doi: https://doi.org/10.1101/2021.02.22.432291
 ```
