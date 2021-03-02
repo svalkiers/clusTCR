@@ -1,4 +1,4 @@
-def create_edgelist(cdr3):
+def create_edgelist(cdr3, filename=None):
     '''
     Create tab-separated edgelist of edges with HD = 1, from a set of sequences.    
     '''
@@ -23,5 +23,11 @@ def create_edgelist(cdr3):
                         if cdr1 <= cdr2:
                             if sum(ch1 != ch2 for ch1, ch2 in zip(cdr1, cdr2)) == 1:
                                 edgelist.add(cdr1 + "\t" + cdr2)
+    
+    # Save edgelist to file
+    if filename is not None:
+        with open(filename, 'w') as f:
+            for edge in edgelist:
+                f.write('%s\n' % edge)
 
     return edgelist

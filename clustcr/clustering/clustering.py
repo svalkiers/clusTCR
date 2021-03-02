@@ -10,6 +10,7 @@ from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering, properties
 from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
+from .tools import create_edgelist
 
 
 class ClusteringResult:
@@ -23,9 +24,12 @@ class ClusteringResult:
         summ = summ.rename_axis('cluster_idx').reset_index()
         summ['motif'] = motifs.values()
         return summ
-
+    
     def write_to_csv(self, path=join(getcwd(), 'clusTCR_clusters.csv')):
         return self.clusters_df.to_csv(path, index=False)
+
+    def export_network(self, filename='clusTCR_network.txt'):
+        create_edgelist(self.clusters_df.CDR3, filename)
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))

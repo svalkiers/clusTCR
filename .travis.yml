@@ -1,4 +1,4 @@
-# Config file for automatic testing at travis-ci.org
+# Automatic testing, build testing and deployment (only main branch) on anaconda
 
 language: python
 python:
@@ -30,9 +30,9 @@ script:
   - python3 -m unittest discover -s ./ -p '*.py'
 
 after_success:
-  - test $TRAVIS_BRANCH = "master" && test $TRAVIS_PULL_REQUEST = "false" &&
-    echo foo &&
-    echo bar
-    # conda config --set anaconda_upload yes &&
-    # conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN && conda build conda/clustcr-gpu/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
+  - cd ..
+  - test $TRAVIS_BRANCH = "main" && test $TRAVIS_PULL_REQUEST = "false" &&
+    conda config --set anaconda_upload yes &&
+    conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN &&
+    conda build conda/clustcr-gpu/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
 
