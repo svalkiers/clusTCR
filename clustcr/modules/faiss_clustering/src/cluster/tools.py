@@ -7,7 +7,6 @@ from ..profile.profile import make_profile
 
 
 def make_profiles(values: pd.Series, properties, size, n_cpus):
-    a = time.time()
     matrix, profile_length = make_matrix(values, properties, size)
     with multiprocessing.Pool(n_cpus) as pool:
         vecs = parmap.map(make_vec,
@@ -18,7 +17,6 @@ def make_profiles(values: pd.Series, properties, size, n_cpus):
                           pm_pool=pool)
     for i in range(len(vecs)):
         matrix[i] = vecs[i]
-    print(time.time() - a)
     return matrix
 
 
@@ -40,12 +38,7 @@ def make_vec(sequence, max_length, properties):
 
 
 def pad_vector(vec, n):
-    add_left = False
-    while len(vec) != n:
-        if add_left:
-            vec.insert(0, 0)
-        else:
-            vec.append(0)
-        add_left = not add_left
-    return vec
-
+    padding = n - len(vec)
+    half = padding // 2
+    right = half if padding % 2 == 0 else half + 1
+    return [0] * half + vec + [0] * right
