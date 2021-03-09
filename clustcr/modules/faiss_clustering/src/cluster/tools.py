@@ -1,53 +1,41 @@
 import numpy as np
 import pandas as pd
-import faiss
-
+import parmap
+import multiprocessing
+import time
 from ..profile.profile import make_profile
 
 
-def make_profiles(values: pd.Series,
-                  properties,
-                  size,
-                  vector_mapping_func=None,
-                  add_constant=False,
-                  extra_feature_size=0,
-                  add_average=False,
-                  add_length=False):
-    matrix, profile_length = make_matrix(values, properties, size, extra_feature_size, add_constant, add_average, add_length)
-    for i, elem in enumerate(values):
-        vec = make_vec(elem, profile_length, properties, vector_mapping_func, add_average, add_constant, add_length)
-        matrix[i] = vec
+def make_profiles(values: pd.Series, properties, size, n_cpus):
+    a = time.time()
+    matrix, profile_length = make_matrix(values, properties, size)
+    with multiprocessing.Pool(n_cpus) as pool:
+        vecs = parmap.map(make_vec,
+                          values,
+                          profile_length,
+                          properties,
+                          pm_parallel=True,
+                          pm_pool=pool)
+    for i in range(len(vecs)):
+        matrix[i] = vecs[i]
+    print(time.time() - a)
     return matrix
 
 
-def make_matrix(values, properties, profile_length, extra_feature_size, add_constant, add_average, add_length):
+def make_matrix(values, properties, profile_length):
     n = len(values)
     if profile_length is None:
         profile_length = values.str.len().max()
-    y_size = profile_length * len(properties) + extra_feature_size
-    if add_constant:
-        y_size += 1
-    if add_length:
-        y_size += 1
-    if add_average:
-        y_size += len(properties)
+    y_size = profile_length * len(properties)
     matrix = np.zeros((n, y_size)).astype('float32')
     return matrix, profile_length
 
 
-def make_vec(sequence, max_length, properties, vector_mapping_func=None, add_average=False, add_constant=False, add_length=False):
+def make_vec(sequence, max_length, properties):
     vec = []
     for prop in properties:
         profile = make_profile(sequence, prop)
-        if vector_mapping_func is not None:
-            profile = vector_mapping_func(profile)
-        if add_average:
-            profile.append(sum(profile))
         vec.extend(pad_vector(profile, max_length))
-    if add_constant:
-        vec.append(0)
-    if add_length:
-        vec.append(len(sequence))
     return vec
 
 
@@ -60,34 +48,4 @@ def pad_vector(vec, n):
             vec.append(0)
         add_left = not add_left
     return vec
-
-
-# The following line disables an inspection in PyCharm, the train and add methods only require 1 argument instead of 2
-# noinspection PyArgumentList
-def cluster_with_faiss(matrix, items_per_cluster, ids=None, use_gpu=False):
-    ncentroids = matrix.shape[0] // items_per_cluster
-    if ncentroids == 0:
-        ncentroids = 1
-    dimension = matrix.shape[1]
-    quantizer = faiss.IndexFlatL2(dimension)
-    index = faiss.IndexIVFFlat(quantizer, dimension, ncentroids)
-    if use_gpu:
-        print('FAISSCLUSTERING:', faiss.get_num_gpus(), 'GPUs used for clustering')
-        index = faiss.index_cpu_to_all_gpus(index)
-    index.train(matrix)
-    if ids is not None:
-        index.add_with_ids(matrix, ids)
-    else:
-        index.add(matrix)
-    return index
-
-
-def train_clustering(matrix, items_per_cluster, use_gpu=False):
-    ncentroids = matrix.shape[0] // items_per_cluster
-    if ncentroids == 0:
-        ncentroids = 1
-    dimension = matrix.shape[1]
-    kmeans = faiss.Kmeans(dimension, ncentroids, gpu=use_gpu)
-    kmeans.train(matrix)
-    return kmeans
 

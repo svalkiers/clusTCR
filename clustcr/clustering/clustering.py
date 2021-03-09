@@ -131,7 +131,8 @@ class Clustering:
         clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
                                      use_gpu=self.use_gpu,
                                      max_sequence_size=self.max_sequence_size,
-                                     properties=self.faiss_properties)
+                                     properties=self.faiss_properties,
+                                     n_cpus=self.n_cpus)
         clustering.train(cdr3)
         return clustering
 
