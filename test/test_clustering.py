@@ -43,7 +43,7 @@ class ClusteringTest(TestBase):
             df = clusters.clusters_df
         clustering.batch_cleanup()
 
-    def test_feature_matrix(self):
+    def test_matrix(self):
         vdj = datasets.vdjdb_cdr3()
         max_sequence_size = vdj.str.len().max()
         train = vdj.sample(2000)
