@@ -17,6 +17,7 @@ class FaissClustering:
         self.kmeans = None
         self.max_sequence_size = max_sequence_size
         self.n_cpus = n_cpus
+        self.profiles = None
 
     def train(self, data: pd.Series):
         """
@@ -27,11 +28,13 @@ class FaissClustering:
         centroids = max(1, size // self.avg_cluster_size)
         self.kmeans = faiss.Kmeans(dimension, centroids, gpu=self.use_gpu, min_points_per_centroid=1)
         self.kmeans.train(profiles)
+        return profiles
 
-    def cluster(self, data: pd.Series):
+    def cluster(self, data, is_profile=False):
         assert self.kmeans is not None, "FaissClustering not trained"
-        profiles = make_profiles(data, self.properties, self.max_sequence_size, self.n_cpus)
-        D, I = self.kmeans.index.search(profiles, 1)
+        if not is_profile:
+            data = make_profiles(data, self.properties, self.max_sequence_size, self.n_cpus)
+        D, I = self.kmeans.index.search(data, 1)
         return I
 
     def ncentroids(self):
