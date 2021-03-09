@@ -105,7 +105,7 @@ class FeatureGenerator:
                 properties[prop].append(np.average([physchem_properties[prop][aa] for aa in seq]))
         for prop in properties:
             self.nodes[prop] = properties[prop]
-
+        
         cols_1 = [prop + "_avg" for prop in list(physchem_properties.keys())]
         cols_2 = [prop + "_var" for prop in list(physchem_properties.keys())]
         physchemprop = pd.concat([pd.DataFrame([self.nodes.groupby("cluster")[prop].mean() for prop in physchem_properties], index=cols_1).T,
