@@ -43,6 +43,23 @@ class ClusteringTest(TestBase):
             df = clusters.clusters_df
         clustering.batch_cleanup()
 
+    def test_feature_matrix(self):
+        vdj = datasets.vdjdb_cdr3()
+        max_sequence_size = vdj.str.len().max()
+        train = vdj.sample(2000)
+        times = 3
+        size_per_time = 3000
+        clustering = Clustering(faiss_training_data=train,
+                                fitting_data_size=times * size_per_time,
+                                max_sequence_size=max_sequence_size)
+        for i in range(times):
+            sample = vdj.sample(size_per_time)
+            clustering.batch_precluster(sample, name=f'time {i}')
+        for clusters in clustering.batch_cluster(calc_feature_matrix=True):
+            df = clusters.clusters_df
+        clustering.batch_feature_matrix()
+        clustering.batch_cleanup()
+
     def test_metrics(self):
         metrics = Clustering().fit(self.cdr3).metrics(self.epitopes)
         metrics.purity()
