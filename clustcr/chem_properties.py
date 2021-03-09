@@ -27,6 +27,6 @@ mutation_stability = {
 
 
 PHYSCHEM = {'basicity': basicity, 'hydrophobicity': hydrophobicity,
-            'helicity': helicity, 'mutation stability': mutation_stability}
+            'helicity': helicity, 'mutation_stability': mutation_stability}
 
 AALPHABET = 'ARNDCQEGHILKMFPSTWYV'
