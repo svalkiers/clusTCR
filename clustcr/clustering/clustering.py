@@ -96,6 +96,7 @@ class Clustering:
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
+        self._set_n_cpus(n_cpus)
 
         # For batch processing
         self.faiss_training_data = faiss_training_data
@@ -109,7 +110,6 @@ class Clustering:
         else:
             self.faiss_clustering = None
 
-        self._set_n_cpus(n_cpus)
         available = ["MCL",
                      "FAISS",
                      "TWO-STEP"]
