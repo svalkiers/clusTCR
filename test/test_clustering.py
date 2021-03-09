@@ -11,6 +11,13 @@ class ClusteringTest(TestBase):
     def test_normal(self):
         Clustering().fit(self.cdr3)
 
+    def test_quality(self):
+        metrics = Clustering().fit(datasets.vdjdb_cdr3()).metrics(datasets.vdjdb_epitopes())
+        self.assertGreater(metrics.purity()[0], 0.6)
+        self.assertGreater(metrics.consistency()[0], 0.12)
+        self.assertGreater(metrics.retention(), 0.21)
+        self.assertGreater(metrics.purity_90()[0], 0.36)
+
     def test_mcl(self):
         Clustering(method='mcl').fit(self.cdr3)
 
