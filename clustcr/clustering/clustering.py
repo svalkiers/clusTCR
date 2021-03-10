@@ -97,6 +97,7 @@ class Clustering:
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
+        self._set_n_cpus(n_cpus)
 
         # For batch processing
         self.faiss_training_data = faiss_training_data
@@ -111,7 +112,6 @@ class Clustering:
         else:
             self.faiss_clustering = None
 
-        self._set_n_cpus(n_cpus)
         available = ["MCL",
                      "FAISS",
                      "TWO-STEP"]
@@ -129,13 +129,17 @@ class Clustering:
         else:
             self.n_cpus = n_cpus
 
-    def _train_faiss(self, cdr3: pd.Series):
+    def _train_faiss(self, cdr3: pd.Series, get_profiles=False):
         clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
                                      use_gpu=self.use_gpu,
                                      max_sequence_size=self.max_sequence_size,
-                                     properties=self.faiss_properties)
-        clustering.train(cdr3)
-        return clustering
+                                     properties=self.faiss_properties,
+                                     n_cpus=self.n_cpus)
+        profiles = clustering.train(cdr3)
+        if get_profiles:
+            return clustering, profiles
+        else:
+            return clustering
 
     def _faiss(self, cdr3: pd.Series):
         """
@@ -149,12 +153,17 @@ class Clustering:
             contains the corresponding cluster ids.
         """
         cdr3 = cdr3.reset_index(drop=True)
+        profiles = None
         if self.faiss_clustering is not None:
             clustering = self.faiss_clustering
         else:
-            clustering = self._train_faiss(cdr3)
+            clustering, profiles = self._train_faiss(cdr3, get_profiles=True)
 
-        result = clustering.cluster(cdr3)
+        if profiles is not None:
+            result = clustering.cluster(profiles, is_profile=True)
+        else:
+            result = clustering.cluster(cdr3)
+
         clusters = {"CDR3": [], "cluster": []}
         for i, cluster in enumerate(result):
             clusters["CDR3"].append(cdr3[i])
