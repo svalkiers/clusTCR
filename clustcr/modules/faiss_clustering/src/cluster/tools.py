@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import parmap
 import multiprocessing
-import time
 from ..profile.profile import make_profile
 
 
