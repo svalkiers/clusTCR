@@ -10,6 +10,7 @@ from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering, properties
 from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
+from .multirepertoire_feature_matrix import MultiRepertoireFeatureMatrix
 from .tools import create_edgelist
 
 
@@ -100,6 +101,7 @@ class Clustering:
         # For batch processing
         self.faiss_training_data = faiss_training_data
         self.max_sequence_size = max_sequence_size
+        self.feature_matrix = None
         if fitting_data_size and self.faiss_training_data is not None:
             self.faiss_cluster_size = int(self.faiss_cluster_size / (fitting_data_size / len(self.faiss_training_data)))
             self.faiss_clustering = self._train_faiss(faiss_training_data)
@@ -185,15 +187,15 @@ class Clustering:
         else:
             return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
 
-    def batch_precluster(self, cdr3: pd.Series):
+    def batch_precluster(self, cdr3: pd.Series, name=''):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
         clustered = self._faiss(cdr3)
         for index, row in clustered.clusters_df.iterrows():
             filename = join(Clustering.BATCH_TMP_DIRECTORY, str(row['cluster']))
             with open(filename, 'a') as f:
-                f.write(row['CDR3'] + '\n')
+                f.write(f'{row["CDR3"]},{name}\n')
 
-    def batch_cluster(self):
+    def batch_cluster(self, calc_feature_matrix=False):
         """
         Clusters the preclusters (stored on disk) using MCL.
         Thus requires the batch_precluster method to be called beforehand.
@@ -205,6 +207,7 @@ class Clustering:
             - Check how many preclusters roughly contain 50k sequences when combined (as that should fit in memory no problem)
             - Limit to bounds (1, ncpus)
         """
+        self.feature_matrix = MultiRepertoireFeatureMatrix()
         clusters_per_batch = max(1, min(self.n_cpus, 50000 // self.faiss_cluster_size))
         npreclusters = self.faiss_clustering.ncentroids()
         max_cluster_id = 0
@@ -214,19 +217,28 @@ class Clustering:
             mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.n_cpus)
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
+            if calc_feature_matrix:
+                self.feature_matrix.add(preclusters, mcl_result)
             yield ClusteringResult(mcl_result)
 
     def _batch_process_preclusters(self, cluster_ids):
-        preclusters = {'CDR3': [], 'cluster': []}
+        preclusters = {'CDR3': [], 'cluster': [], 'name': []}
         for cluster_id in cluster_ids:
             filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
             if not exists(filename):
                 continue
             with open(filename) as f:
-                sequences = f.readlines()
+                content = f.readlines()
+                content = [e.replace('\n', '').split(',') for e in content]
+                sequences = list(map(lambda x: x[0], content))
+                names = list(map(lambda x: x[1], content))
                 preclusters['CDR3'].extend(sequences)
                 preclusters['cluster'].extend([cluster_id] * len(sequences))
+                preclusters['name'].extend(names)
         return ClusteringResult(pd.DataFrame(preclusters))
+
+    def batch_feature_matrix(self):
+        return self.feature_matrix.get_matrix()
 
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
