@@ -97,10 +97,14 @@ class FeatureGenerator:
         """
         physchem_properties = PHYSCHEM
 
-        properties = []
+        properties = {}
         for seq in self.nodes["CDR3"]:
-            properties.append([np.average([physchem_properties[prop][aa] for aa in seq]) for prop in physchem_properties])
-        self.nodes[list(physchem_properties.keys())] = properties
+            for prop in physchem_properties:
+                if prop not in properties:
+                    properties[prop] = []
+                properties[prop].append(np.average([physchem_properties[prop][aa] for aa in seq]))
+        for prop in properties:
+            self.nodes[prop] = properties[prop]
         
         cols_1 = [prop + "_avg" for prop in list(physchem_properties.keys())]
         cols_2 = [prop + "_var" for prop in list(physchem_properties.keys())]
