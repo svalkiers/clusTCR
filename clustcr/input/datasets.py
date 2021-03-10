@@ -6,6 +6,7 @@ from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcr
 from clustcr.input.immuneaccess import parse_immuneaccess
 from clustcr.input.tcrex import parse_tcrex
 from clustcr.input.airr import parse_airr
+from clustcr.input.tenx import parse_10x
 from os.path import join, dirname, abspath
 
 DIR = dirname(abspath(__file__))
@@ -39,8 +40,10 @@ def read_cdr3(file, data_format):
         return parse_airr(file)
     elif data_format.lower()=='tcrex':
         return parse_tcrex(file)
+    elif data_format.lower()=='10x':
+        return parse_10x(file)
     else:
-        print(f'Unrecognised format: {format}')
+        print(f'Unrecognised format: {data_format}')
         
 
 def metarepertoire(directory, data_format, out_format='CDR3', n_sequences=10**6):

@@ -30,7 +30,7 @@ class ClusteringResult:
         return self.clusters_df.to_csv(path,index=False)
     
     def export_network(self, filename='clusTCR_network.txt'):
-        create_edgelist(self.clusters_df.CDR3, filename)
+        return create_edgelist(self.clusters_df.CDR3, filename)
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
