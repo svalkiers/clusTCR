@@ -50,6 +50,23 @@ class ClusteringTest(TestBase):
             df = clusters.clusters_df
         clustering.batch_cleanup()
 
+    def test_batch_clustering_multiprocessing(self):
+        vdj = datasets.vdjdb_cdr3()
+        max_sequence_size = vdj.str.len().max()
+        train = vdj.sample(2000)
+        times = 3
+        size_per_time = 3000
+        clustering = Clustering(faiss_training_data=train,
+                                fitting_data_size=times * size_per_time,
+                                max_sequence_size=max_sequence_size,
+                                n_cpus='all')
+        for i in range(times):
+            sample = vdj.sample(size_per_time)
+            clustering.batch_precluster(sample)
+        for clusters in clustering.batch_cluster():
+            df = clusters.clusters_df
+        clustering.batch_cleanup()
+
     def test_matrix(self):
         vdj = datasets.vdjdb_cdr3()
         max_sequence_size = vdj.str.len().max()
