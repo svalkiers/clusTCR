@@ -7,13 +7,16 @@ from ..profile.profile import make_profile
 
 def make_profiles(values: pd.Series, properties, size, n_cpus):
     matrix, profile_length = make_matrix(values, properties, size)
-    with multiprocessing.Pool(n_cpus) as pool:
-        vecs = parmap.map(make_vec,
-                          values,
-                          profile_length,
-                          properties,
-                          pm_parallel=True,
-                          pm_pool=pool)
+    if n_cpus > 1:
+        with multiprocessing.Pool(n_cpus) as pool:
+            vecs = parmap.map(make_vec,
+                              values,
+                              profile_length,
+                              properties,
+                              pm_parallel=True,
+                              pm_pool=pool)
+    else:
+        vecs = [make_vec(seq, profile_length, properties) for seq in values]
     for i in range(len(vecs)):
         matrix[i] = vecs[i]
     return matrix
