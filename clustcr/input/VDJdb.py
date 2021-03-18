@@ -2,7 +2,7 @@ import pandas as pd
 import json
 
 
-def parse_vdjdb_file(filename, q=0):
+def parse_VDJdb(filename, q=0):
     """
     Parse files in the VDJdb format.
     q-score defines the quality of the database entry (3 > 2 > 1 > 0).
@@ -26,21 +26,21 @@ def parse_vdjdb_file(filename, q=0):
 
 
 def vdjdb_to_gliph2(filename, q=0):
-    prepared_data = parse_vdjdb_file(filename, q=q)
+    prepared_data = parse_VDJdb(filename, q=q)
     return prepared_data.drop(columns=['Epitope'], axis=1)
 
 
 def vdjdb_to_tcrdist(filename, q=0):
-    prepared_data = parse_vdjdb_file(filename, q=q)
+    prepared_data = parse_VDJdb(filename, q=q)
     prepared_data.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'}, inplace=True)
     return prepared_data.drop(columns=['Epitope'], axis=1)
 
 
 def vdjdb_to_cdr3list(filename, q=0):
-    prepared_data = parse_vdjdb_file(filename, q=q)
+    prepared_data = parse_VDJdb(filename, q=q)
     return prepared_data.CDR3
 
 
 def vdjdb_to_epitopedata(filename, q=0):
-    prepared_data = parse_vdjdb_file(filename, q=q)
+    prepared_data = parse_VDJdb(filename, q=q)
     return prepared_data.drop(columns=['subject', 'count'], axis=1)

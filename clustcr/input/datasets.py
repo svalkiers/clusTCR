@@ -2,11 +2,12 @@ import os
 import random
 import pandas as pd
 
-from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
-from clustcr.input.immuneaccess import parse_immuneaccess
-from clustcr.input.tcrex import parse_tcrex
-from clustcr.input.airr import parse_airr
-from clustcr.input.tenx import parse_10x
+from clustcr.input.VDJdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
+from clustcr.input.AIRR import parse_AIRR
+from clustcr.input.immuneACCESS import parse_immuneACCESS
+from clustcr.input.TCRex import parse_TCRex
+from clustcr.input.MiXCR import parse_MiXCR
+from clustcr.input.TenX import parse_10X
 from os.path import join, dirname, abspath
 
 DIR = dirname(abspath(__file__))
@@ -34,37 +35,43 @@ def read_cdr3(file, data_format):
     """
     Import function to read and parse rep-seq data of various formats.
     """
-    if data_format.lower()=='immuneaccess':
-        return parse_immuneaccess(file)
-    elif data_format.lower()=='airr':
-        return parse_airr(file)
+    if data_format.lower()=='airr':
+        return parse_AIRR(file)
+    elif data_format.lower()=='immuneaccess':
+        return parse_immuneACCESS(file)
+    elif data_format.lower()=='mixcr':
+        return parse_MiXCR(file)
     elif data_format.lower()=='tcrex':
-        return parse_tcrex(file)
+        return parse_TCRex(file)
     elif data_format.lower()=='10x':
-        return parse_10x(file)
+        return parse_10X(file)
     else:
         print(f'Unrecognised format: {data_format}')
         
 
-def metarepertoire(directory, data_format, out_format='CDR3', n_sequences=10**6):
-    files = os.listdir(directory)
-    random.shuffle(files)
+def metarepertoire(directory, data_format, files=None, out_format='CDR3', n_sequences=10**6):
     
-    if data_format.lower()=='immuneaccess':
-        meta = parse_immuneaccess(join(directory, files[0]), out_format=out_format)
-    elif data_format.lower()=='airr':
-        meta = parse_airr(join(directory, files[0]), out_format=out_format)
-    elif data_format.lower()=='tcrex':
-        meta = parse_tcrex(join(directory, files[0]), out_format=out_format)
+    if files is None:
+        print("Randomly sampling from directory:\n%s" % directory)
+        files = os.listdir(directory)
+        random.shuffle(files)
+    else:
+        print("Randomly sampling from provided file list...")
+    
+    meta = pd.DataFrame()
 
-    for file in files[1:]:
+    for file in files:
         file = join(directory, file)
-        if data_format.lower()=='immuneaccess':
-            meta = pd.concat([meta, parse_immuneaccess(file, out_format=out_format)])
-        elif data_format.lower()=='airr':
-            meta = pd.concat([meta, parse_airr(file)])
+        if data_format.lower()=='airr':
+            meta = pd.concat([meta, parse_AIRR(file, out_format=out_format)])
+        elif data_format.lower()=='immuneaccess':
+            meta = pd.concat([meta, parse_immuneACCESS(file, out_format=out_format)])
+        elif data_format.lower()=='mixcr':
+            meta = pd.concat([meta, parse_MiXCR(file)])
         elif data_format.lower()=='tcrex':
-            meta = pd.concat([meta, parse_tcrex(file)])
+            meta = pd.concat([meta, parse_TCRex(file)])
+        elif data_format.lower()=='10x':
+            meta = pd.concat([meta, parse_10X(file)])
         meta.drop_duplicates(inplace=True)
         if len(meta) > n_sequences:
             return meta.sample(n_sequences)

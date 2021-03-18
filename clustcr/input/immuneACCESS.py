@@ -4,11 +4,11 @@ from .tools import imgt_v_genes
 from .adaptive_to_imgt import adaptive_to_imgt_human
 
 
-def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
+def parse_immuneACCESS(filename, out_format='CDR3', separator='\t'):
     """
     Parse data in the immuneACCESS format.
     """
-    df = pd.read_csv(filename, sep=separator)
+    df = pd.read_csv(filename, sep=separator, low_memory=False)
     if 'amino_acid' in df.columns:
         sample_type = 'v1'
     elif 'aminoAcid' in df.columns:

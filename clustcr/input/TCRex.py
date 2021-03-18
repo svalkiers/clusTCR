@@ -1,6 +1,6 @@
 import pandas as pd
 
-def parse_tcrex(filename, out_format='CDR3', separator='\t'):
+def parse_TCRex(filename, out_format='CDR3', separator='\t'):
     data = pd.read_csv(filename, sep=separator)
     data.drop(columns=['TRBJ_gene'], inplace=True)
     if out_format.upper() == 'CDR3':
