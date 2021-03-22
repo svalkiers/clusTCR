@@ -1,11 +1,40 @@
-import pandas as pd
+from .parser import parser
 
-def parse_TCRex(filename, out_format='CDR3', separator='\t'):
-    data = pd.read_csv(filename, sep=separator)
-    data.drop(columns=['TRBJ_gene'], inplace=True)
-    if out_format.upper() == 'CDR3':
-        return data.CDR3_beta.unique()
-    elif out_format.upper() == 'GLIPH2':
-        return data.rename(columns={'CDR3_beta': 'CDR3', 'TRBV_gene': 'V'})
-    elif out_format.upper() == 'TCRDIST':
-        return data.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'})
+def parse_TCRex(filename, out_format='CDR3', sep='\t'):
+    """
+    Import a dataset following the TCRex input format.
+    For mor info about the TCRex format, visit the TCRex documentation:
+        https://tcrex.biodatamining.be/instructions/
+    
+    Parse and extract relevant data columns. These include V gene, J gene and CDR3 amino acid sequence:
+        - TRBV_gene
+        - TRBJ_gene
+        - CDR3_beta
+    
+    Arguments
+    ---------
+    filename: str
+        Name of the input file.
+    out_format: str, default = CDR3
+        The output format. Available output formats include:
+        CDR3, GLIPH2, TCRDist
+    sep: str, default = \t
+        Column separator.
+    
+    Returns
+    -------
+    data: pd.DataFrame
+        Parsed TCRex file.
+    """
+    
+    # Column IDs
+    v_col = 'TRBV_gene'
+    cdr3_col = 'CDR3_beta'
+    j_col = 'TRBJ_gene'
+    
+    return parser(filename=filename, 
+                  v_col=v_col, 
+                  cdr3_col=cdr3_col, 
+                  j_col=j_col,
+                  out_format=out_format,
+                  sep=sep)

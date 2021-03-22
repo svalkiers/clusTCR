@@ -1,22 +1,40 @@
-import pandas as pd
+from .parser import parser
 
 def parse_AIRR(filename, out_format='CDR3', sep='\t'):
-
+    """
+    Import a dataset following the AIRR standards data format (MiAIRR Standard Data Representation).
+    For mor info about the AIRR format, visit the AIRR Community documentation page:
+        https://docs.airr-community.org/en/stable/datarep/format.html
+    
+    Parse and extract relevant data columns. These include V gene, J gene and CDR3 amino acid sequence:
+        - v_call
+        - j_call
+        - junction_aa
+    
+    Arguments
+    ---------
+    filename: str
+        Name of the input file.
+    out_format: str, default = CDR3
+        The output format. Available output formats include:
+        CDR3, GLIPH2, TCRDist
+    sep: str, default = \t
+        Column separator.
+    
+    Returns
+    -------
+    data: pd.DataFrame
+        Parsed AIRR file.
+    """
+    
+    # Column IDs
     v_col = 'v_call'
     cdr3_col = 'junction_aa'
     j_col = 'j_call'
     
-    # Read data
-    data = pd.read_csv(filename, sep=sep, low_memory=False)[
-        [v_col, cdr3_col, j_col]]
-    # Rename to ClusTCR format
-    data.rename(columns={cdr3_col:"CDR3", v_col:"V", j_col:"J"}, inplace=True)
-    # Remove any duplicates and rows with missing values
-    data.drop_duplicates(inplace=True)
-    data.dropna(inplace=True)
-    if out_format.upper() == 'CDR3':
-        return data.CDR3.unique()
-    elif out_format.upper() == 'GLIPH2':
-        return data
-    elif out_format.upper() == 'TCRDIST':
-        return data.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'})
+    return parser(filename=filename, 
+                  v_col=v_col, 
+                  cdr3_col=cdr3_col, 
+                  j_col=j_col,
+                  out_format=out_format,
+                  sep=sep)
