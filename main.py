@@ -37,9 +37,38 @@ def plot(metric_lambda, name):
     plt.show()
 
 
+def plotHDtime_parallel():
+    plt.figure()
+    x = []
+    y = {}
+    for data, epi in DATA:
+        x.append(len(data))
+        for hd_multiprocessing in [False, True]:
+            for hd in [1, 2, 3]:
+                print(hd)
+                clustering = Clustering(n_cpus='all', blosum_cutoff=None, hd_cutoff=hd)
+                clustering.hd_multiprocessing = hd_multiprocessing
+                starting_time = time.time()
+                clustering.fit(data)
+                duration = time.time() - starting_time
+                key = (hd, hd_multiprocessing)
+                if key not in y:
+                    y[key] = []
+                y[key].append(duration)
+
+    for key in y:
+        linestyle = ['dotted', 'dashed', 'dashdot'][int(key[0]) - 1]
+        plt.plot(x, y[key], label=f'HD {key[0]} {"parallel" if key[1] else ""}', linestyle=linestyle)
+    plt.xlabel('Number of input sequences')
+    plt.ylabel('Time')
+    plt.legend(loc='best')
+    plt.title(f'Hyperparameter tuning')
+    plt.show()
+
+
 if __name__ == '__main__':
     # plot(lambda x, y: x.purity()[0], 'Purity')
     # plot(lambda x, y: x.consistency()[0], 'Consistency')
     # plot(lambda x, y: x.retention(), 'Retention')
-    plot(lambda x, y: time.time() - y, 'Time')
-
+    # plot(lambda x, y: time.time() - y, 'Time')
+    plotHDtime_parallel()

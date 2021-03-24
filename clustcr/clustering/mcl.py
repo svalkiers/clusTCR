@@ -127,20 +127,30 @@ def clusters_without_hd1_edges(edges, cluster_contents):
     return clusters
 
 
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus, blosum_cutoff, hd_cutoff):
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus, blosum_cutoff, hd_cutoff, hd_multiprocessing):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
     import time
     a = time.time()
     cluster_contents = preclust.cluster_contents()
-    edges = {i: create_edgelist(cluster, hd_cutoff) for i, cluster in enumerate(cluster_contents)}
-    remaining_edges = edges.values()
-    print(time.time() - a, 'edgelist')
+    if hd_multiprocessing:
+        print('yes')
+        with multiprocessing.Pool(n_cpus) as pool:
+            edges = parmap.map(create_edgelist,
+                               cluster_contents,
+                               hd_cutoff,
+                               pm_parallel=True,
+                               pm_pool=pool)
+    else:
+        print('no')
+        edges = []
+        for contents in cluster_contents:
+            edges.append(create_edgelist(contents, hd_cutoff))
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(MCL_multi,
-                              remaining_edges,
+                              edges,
                               cdr3,
                               blosum_cutoff,
                               pm_parallel=True,

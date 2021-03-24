@@ -103,6 +103,9 @@ class Clustering:
         self.faiss_properties = properties.OPTIMAL
         self._set_n_cpus(n_cpus)
 
+        # TEMPORARY
+        self.hd_multiprocessing = False
+
         # For batch processing
         self.faiss_training_data = faiss_training_data
         self.max_sequence_size = max_sequence_size
@@ -196,7 +199,7 @@ class Clustering:
 
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus, self.blosum_cutoff, self.hd_cutoff))
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus, self.blosum_cutoff, self.hd_cutoff, self.hd_multiprocessing))
         else:
             return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
 
