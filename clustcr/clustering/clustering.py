@@ -70,6 +70,8 @@ class Clustering:
                  n_cpus: Union[str, int] = 1,
                  use_gpu=False,
                  faiss_cluster_size=5000,
+                 hd_cutoff=1,
+                 blosum_cutoff=0.93,
                  mcl_params=None,
                  faiss_training_data=None,
                  max_sequence_size=None,
@@ -94,6 +96,8 @@ class Clustering:
         """
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
         self.method = method.upper()
+        self.blosum_cutoff = blosum_cutoff
+        self.hd_cutoff = hd_cutoff
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
@@ -192,7 +196,7 @@ class Clustering:
 
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus))
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus, self.blosum_cutoff, self.hd_cutoff))
         else:
             return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters))
 
