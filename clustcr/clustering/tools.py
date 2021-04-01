@@ -15,7 +15,7 @@ def create_edgelist(cdr3, cutoff=2, filename=None):
             cdr3hash[hash].add(cdr)
 
     # Generate network
-    edgelist = list()
+    edgelist = set()
     for hash in cdr3hash:
         if len(cdr3hash[hash]) <= 1:
             continue
@@ -24,7 +24,7 @@ def create_edgelist(cdr3, cutoff=2, filename=None):
                 if cdr1 != cdr2 \
                         and cdr1 <= cdr2 \
                         and sum(ch1 != ch2 for ch1, ch2 in zip(cdr1, cdr2)) <= cutoff:
-                    edgelist.append(cdr1 + "\t" + cdr2)
+                    edgelist.add(cdr1 + "\t" + cdr2)
 
     # Save edgelist to file
     if filename is not None:

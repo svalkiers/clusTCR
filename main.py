@@ -16,7 +16,7 @@ def plot(metric_lambda, name):
         x.append(len(data))
         starting_time = time.time()
         clust = Clustering(n_cpus='all', blosum_cutoff=None).fit(data)
-        y_standard.append(time.time() - starting_time)
+        y_standard.append(metric_lambda(clust.metrics(epi)))
         for bl in [0.9, 0.93, 0.96]:
             for hd in [1, 2, 3]:
                 starting_time = time.time()
@@ -24,7 +24,7 @@ def plot(metric_lambda, name):
                 key = (bl, hd)
                 if key not in y:
                     y[key] = []
-                y[key].append(time.time() - starting_time)
+                y[key].append(metric_lambda(clustering.metrics(epi)))
 
     for key in y:
         linestyle = ['dotted', 'dashed', 'dashdot'][int(key[1]) - 1]
@@ -67,8 +67,8 @@ def plotHDtime_parallel():
 
 
 if __name__ == '__main__':
-    # plot(lambda x, y: x.purity()[0], 'Purity')
-    # plot(lambda x, y: x.consistency()[0], 'Consistency')
-    # plot(lambda x, y: x.retention(), 'Retention')
-    # plot(lambda x, y: time.time() - y, 'Time')
-    plotHDtime_parallel()
+    plot(lambda x: x.purity()[0], 'Purity')
+    plot(lambda x: x.consistency()[0], 'Consistency')
+    plot(lambda x: x.retention(), 'Retention')
+#     # plot(lambda x, y: time.time() - y, 'Time')
+#     plotHDtime_parallel()
