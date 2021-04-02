@@ -21,9 +21,9 @@ class GreedyClustering:
 
     def fit(self, cdr3):
         if self.use_hashing:
-            return self.cluster(self.edges_from_hash())
+            return GreedyClustering.to_dataframe(self.cluster(self.edges_from_hash(cdr3)))
         else:
-            return self.cluster(self.edges_from_parallelization(cdr3))
+            return GreedyClustering.to_dataframe(self.parallelized_clustering_using_distance(cdr3))
 
     def build_hash(self, cdr3):
         self.cdr3hash = {}
@@ -37,7 +37,7 @@ class GreedyClustering:
     def hd1(seq1, seq2):
         return sum(ch1 != ch2 for ch1, ch2 in zip(seq1, seq2)) == 1
 
-    def edges_from_hash(self):
+    def edges_from_hash(self, cdr3):
         self.build_hash(cdr3)
         edges = set()
         for hash in self.cdr3hash:
@@ -50,7 +50,7 @@ class GreedyClustering:
         return edges
 
     @staticmethod
-    def edges_using_distance_computation(cdr3):
+    def edges_using_distance(cdr3):
         edges = []
         for i in range(len(cdr3)):
             for j in range(i + 1, len(cdr3)):
@@ -59,16 +59,38 @@ class GreedyClustering:
         return edges
 
     @staticmethod
+    def cluster_using_distance(cdr3):
+        return GreedyClustering.cluster(GreedyClustering.edges_using_distance(cdr3))
+
+    @staticmethod
+    def parallelized_clustering_using_distance(cdr3):
+        grouped_on_length = defaultdict(list)
+        for seq in cdr3:
+            grouped_on_length[len(seq)].append(seq)
+        grouped_on_length = grouped_on_length.values()
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+            res = parmap.map(GreedyClustering.cluster_using_distance,
+                             grouped_on_length,
+                             pm_parallel=True,
+                             pm_pool=pool)
+        result = {}
+        for i, clustering in enumerate(res):
+            for key in clustering:
+                clustering[key] += i * 1000
+            result.update(clustering)
+        return result
+
+    @staticmethod
     def edges_from_parallelization(cdr3):
         grouped_on_length = defaultdict(list)
         for seq in cdr3:
             grouped_on_length[len(seq)].append(seq)
         grouped_on_length = grouped_on_length.values()
         with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-            res = parmap.map(GreedyClustering.edges_using_distance_computation,
-                              grouped_on_length,
-                              pm_parallel=True,
-                              pm_pool=pool)
+            res = parmap.map(GreedyClustering.edges_using_distance,
+                             grouped_on_length,
+                             pm_parallel=True,
+                             pm_pool=pool)
         return itertools.chain.from_iterable(res)
 
     @staticmethod
@@ -90,7 +112,7 @@ class GreedyClustering:
                 for sequence in clustering:
                     if clustering[sequence] == cluster2:
                         clustering[sequence] = cluster1
-        return GreedyClustering.to_dataframe(clustering)
+        return clustering
 
     @staticmethod
     def to_dataframe(clustering):
@@ -102,7 +124,7 @@ if __name__ == '__main__':
     from clustcr.clustering.metrics import Metrics
 
     cdr3, epi = datasets.vdjdb_cdr3(), datasets.vdjdb_epitopes()
-    clustering = GreedyClustering(use_hashing=False)
+    clustering = GreedyClustering(use_hashing=True)
     result = clustering.fit(cdr3)
     print(result)
     print(Metrics(result, epi).summary())

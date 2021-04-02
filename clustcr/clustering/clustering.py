@@ -252,7 +252,7 @@ class Clustering:
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
-    def fit(self, cdr3: pd.Series):
+    def fit(self, cdr3: pd.Series) -> ClusteringResult:
         """
         Function that calls the indicated clustering method and returns clusters
         in a nodelist format.
