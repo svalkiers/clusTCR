@@ -2,7 +2,7 @@ import os
 import random
 import pandas as pd
 
-from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata
+from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata, parse_vdjdb
 from clustcr.input.immuneaccess import parse_immuneaccess
 from clustcr.input.tcrex import parse_tcrex
 from clustcr.input.airr import parse_airr
@@ -10,7 +10,7 @@ from clustcr.input.tenx import parse_10x
 from os.path import join, dirname, abspath
 
 DIR = dirname(abspath(__file__))
-vdjdb_location = join(DIR, 'vdjdb_trb.tsv')
+vdjdb_location = join(DIR, 'vdjdb/vdjdb_full.txt')
 
 
 def test_cdr3():
@@ -73,6 +73,40 @@ def metarepertoire(directory, data_format, out_format='CDR3', n_sequences=10**6)
     return meta
 
 
+def vdjdb_alpha(q=0, epitopes=False):
+    vdjdb = parse_vdjdb(vdjdb_location, q=q)
+    alpha = vdjdb[['cdr3.alpha', 'antigen.epitope']].dropna().drop_duplicates()
+    alpha.rename(columns={'cdr3.alpha':'CDR3',
+                          'antigen.epitope':'Epitope'},
+                 inplace=True)
+    if epitopes:
+        return alpha
+    else:
+        return alpha["CDR3"].drop_duplicates()
+
+def vdjdb_beta(q=0, epitopes=False):
+    vdjdb = parse_vdjdb(vdjdb_location, q=q)
+    beta = vdjdb[['cdr3.beta', 'antigen.epitope']].dropna().drop_duplicates()
+    beta.rename(columns={'cdr3.beta':'CDR3',
+                         'antigen.epitope':'Epitope'},
+                inplace=True)
+    if epitopes:
+        return beta
+    else:
+        return beta["CDR3"].drop_duplicates()
+    
+def vdjdb_paired(q=0, epitopes=False):
+    vdjdb = parse_vdjdb(vdjdb_location, q=q)
+    paired = vdjdb[['cdr3.alpha', 'cdr3.beta', 'antigen.epitope']].dropna().drop_duplicates()
+    paired.rename(columns={'cdr3.alpha':'CDR3_alpha',
+                           'cdr3.beta':'CDR3_beta',
+                           'antigen.epitope':'Epitope'},
+                  inplace=True)
+    if epitopes:
+        return paired
+    else:
+        return paired[['CDR3_alpha', 'CDR3_beta']].drop_duplicates()
+    
 def vdjdb_cdr3():
     return vdjdb_to_cdr3list(vdjdb_location)
 
