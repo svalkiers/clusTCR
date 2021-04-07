@@ -12,7 +12,7 @@ class ClusteringTest(TestBase):
         Clustering().fit(self.cdr3)
 
     def test_quality(self):
-        metrics = Clustering().fit(datasets.vdjdb_cdr3()).metrics(datasets.vdjdb_epitopes())
+        metrics = Clustering().fit(datasets.vdjdb_beta()).metrics(datasets.vdjdb_beta(epitopes=True))
         self.assertGreater(metrics.purity()[0], 0.6)
         self.assertGreater(metrics.consistency()[0], 0.12)
         self.assertGreater(metrics.retention(), 0.21)
@@ -35,7 +35,7 @@ class ClusteringTest(TestBase):
                 Clustering(method=method, faiss_cluster_size=size).fit(self.cdr3)
 
     def test_batch_clustering(self):
-        vdj = datasets.vdjdb_cdr3()
+        vdj = datasets.vdjdb_beta()
         max_sequence_size = vdj.str.len().max()
         train = vdj.sample(2000)
         times = 3
@@ -51,7 +51,7 @@ class ClusteringTest(TestBase):
         clustering.batch_cleanup()
 
     def test_batch_clustering_multiprocessing(self):
-        vdj = datasets.vdjdb_cdr3()
+        vdj = datasets.vdjdb_beta()
         max_sequence_size = vdj.str.len().max()
         train = vdj.sample(2000)
         times = 3
@@ -68,7 +68,7 @@ class ClusteringTest(TestBase):
         clustering.batch_cleanup()
 
     def test_matrix(self):
-        vdj = datasets.vdjdb_cdr3()
+        vdj = datasets.vdjdb_beta()
         max_sequence_size = vdj.str.len().max()
         train = vdj.sample(2000)
         times = 3
