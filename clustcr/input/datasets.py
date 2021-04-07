@@ -2,7 +2,7 @@ import os
 import random
 import pandas as pd
 
-from clustcr.input.vdjdb import vdjdb_to_cdr3list, vdjdb_to_gliph2, vdjdb_to_tcrdist, vdjdb_to_epitopedata, parse_vdjdb
+from clustcr.input.vdjdb import parse_vdjdb
 from clustcr.input.immuneaccess import parse_immuneaccess
 from clustcr.input.tcrex import parse_tcrex
 from clustcr.input.airr import parse_airr
@@ -19,7 +19,7 @@ def test_cdr3():
     subset of the VDJdb.
     This data can be used for testing and benchmarking.
     """
-    return vdjdb_cdr3_small()
+    return vdjdb_beta(q=1, epitopes=False)
 
 
 def test_epitopes():
@@ -27,7 +27,7 @@ def test_epitopes():
     Epitope data corresponding to the sequences in test_cdr3().
     This data can be used for testing and benchmarking.
     """
-    return vdjdb_epitopes_small()
+    return vdjdb_beta(q=1, epitopes=True)
 
 
 def read_cdr3(file, data_format):
@@ -107,29 +107,16 @@ def vdjdb_paired(q=0, epitopes=False):
     else:
         return paired[['CDR3_alpha', 'CDR3_beta']].drop_duplicates()
     
-def vdjdb_cdr3():
-    return vdjdb_to_cdr3list(vdjdb_location)
+def vdjdb_gliph2(filename, q=0):
+    prepared_data = parse_vdjdb(filename, q=q)
+    prepared_data = prepared_data[['cdr3.beta', 'v.beta']].dropna().drop_duplicates()
+    prepared_data.rename(columns={'cdr3.beta':'CDR3',
+                                  'v.beta':'V'})
+    return prepared_data
 
-
-def vdjdb_gliph2():
-    return vdjdb_to_gliph2(vdjdb_location)
-
-
-def vdjdb_epitopes():
-    return vdjdb_to_epitopedata(vdjdb_location)
-
-
-def vdjdb_cdr3_small(q=1):
-    return vdjdb_to_cdr3list(vdjdb_location, q=q).drop_duplicates()
-
-
-def vdjdb_gliph2_small(q=1):
-    return vdjdb_to_gliph2(vdjdb_location, q=q).drop_duplicates()
-
-
-def vdjdb_tcrdist_small(q=1):
-    return vdjdb_to_tcrdist(vdjdb_location, q=q).drop_duplicates()
-
-
-def vdjdb_epitopes_small(q=1):
-    return vdjdb_to_epitopedata(vdjdb_location, q=q).drop_duplicates()
+def vdjdb_tcrdist(filename, q=0):
+    prepared_data = parse_vdjdb(filename, q=q)
+    prepared_data = prepared_data[['cdr3.beta', 'v.beta']].dropna().drop_duplicates()
+    prepared_data.rename(columns={'cdr3.beta':'cdr3_b_aa',
+                                  'v.beta':'v_b_gene'})
+    return prepared_data
