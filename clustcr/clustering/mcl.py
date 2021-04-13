@@ -3,10 +3,21 @@ import networkx as nx
 import markov_clustering as mcl
 import parmap
 import multiprocessing
+import time
 from clustcr.clustering.tools import create_edgelist
 
+def timeit(myfunc):
+    # Decorator to keep track of time required to run a function
+    def timed(*args, **kwargs):
+        start = time.time()
+        result = myfunc(*args, **kwargs)
+        end = time.time()
+        print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
+        return result
+    return timed
 
-def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
+
+def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outfile=None):
     """
     Perform clustering on a network of CDR3 amino acid sequences with
     a known hamming distance, using the Markov clustering (MCL) algorithm.
@@ -32,7 +43,7 @@ def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
         contains the corresponding cluster ids.
     """
     if edgelist is None:
-        edgelist = create_edgelist(cdr3)
+        edgelist = create_edgelist(cdr3, method=distance_metric)
 
     G = nx.parse_adjlist(edgelist, nodetype=str)
     m = nx.to_scipy_sparse_matrix(G)
@@ -86,13 +97,13 @@ def clusters_without_hd1_edges(edges, cluster_contents):
         del edges[id]
     return clusters
 
-
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
+@timeit
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
     cluster_contents = preclust.cluster_contents()
-    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
+    edges = {i: create_edgelist(cluster, method=distance_metric) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
     clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
@@ -111,12 +122,12 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-
-def MCL_from_preclusters(cdr3, preclust):
+@timeit
+def MCL_from_preclusters(cdr3, preclust, distance_metric):
     initiate = True
     for c in preclust.cluster_contents():
         try:
-            edges = create_edgelist(c)
+            edges = create_edgelist(c, method=distance_metric)
             if initiate:
                 nodelist = MCL(cdr3, edges)
                 initiate = False

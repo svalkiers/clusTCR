@@ -172,7 +172,7 @@ class FeatureGenerator:
     
     
     
-    def clustermotif(self):
+    def clustermotif(self, method='standard', cutoff=.9):
         """
         Calculate a consensus motif representation for a set of sequence
         based on the profile matrix.
@@ -181,7 +181,7 @@ class FeatureGenerator:
         for i in self.clusterids:
             sequences = self.nodes[self.nodes['cluster'] == i]['CDR3'].tolist()
             profile = profile_matrix(sequences)
-            motif = motif_from_profile(profile)
+            motif = motif_from_profile(profile, method=method, cutoff=cutoff)
             clustermotifs[i] = motif
         
         return clustermotifs

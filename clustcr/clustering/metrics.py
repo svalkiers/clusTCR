@@ -14,7 +14,7 @@ class Metrics:
 
         # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
         self.gt = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
-        self.gt.drop_duplicates(inplace=True)
+        self.gt = self.gt.drop_duplicates()
 
         # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
         self.gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")

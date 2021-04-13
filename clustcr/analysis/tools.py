@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 from clustcr.chem_properties import AALPHABET
 from clustcr.clustering.metrics import Metrics
@@ -53,7 +53,7 @@ def profile_matrix(sequences : list):
     return profile
 
 
-def motif_from_profile(profile):
+def motif_from_profile(profile, method, cutoff=.9):
     '''
     Generate consensus sequence motif from a profile matrix.
     Square brackets [...] indicate multiple aa possibilities at that position.
@@ -61,17 +61,26 @@ def motif_from_profile(profile):
     '''
 
     consensus = ''
-    for col in profile.columns:
-        if profile[col].max() > .5:
-            consensus += profile[col].idxmax()
-        elif sum(profile[col].nlargest(2)) >= .5:
-            if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
+    
+    if method.lower() == 'standard':
+        for col in profile.columns:
+            if profile[col].max() > .5:
+                consensus += profile[col].idxmax()
+            elif sum(profile[col].nlargest(2)) >= .5:
+                if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
+                    consensus += profile[col].idxmax()
+                else:
+                    char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
+                    consensus += char
+            else:
+                consensus += "."
+                
+    elif method.lower() == 'conservative':
+        for col in profile.columns:
+            if profile[col].max() > cutoff:
                 consensus += profile[col].idxmax()
             else:
-                char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
-                consensus += char
-        else:
-            consensus += "."
+                consensus += "."
 
     return consensus
 
