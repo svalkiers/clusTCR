@@ -9,8 +9,12 @@ class InputTest(TestBase):
         datasets.test_epitopes()
 
     def test_vdj(self):
-        datasets.vdjdb_cdr3()
-        datasets.vdjdb_epitopes()
+        datasets.vdjdb_alpha()
+        datasets.vdjdb_beta()
+        datasets.vdjdb_paired()
+        datasets.vdjdb_alpha(epitopes=True)
+        datasets.vdjdb_beta(epitopes=True)
+        datasets.vdjdb_paired(epitopes=True)
 
     def test_read_immune(self):
         read_cdr3('input/immuneaccess/HIP05763.tsv', data_format='immuneaccess')

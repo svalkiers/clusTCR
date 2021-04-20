@@ -12,7 +12,7 @@ class ClusteringTest(TestBase):
         Clustering().fit(self.cdr3)
 
     def test_quality(self):
-        metrics = Clustering().fit(datasets.vdjdb_beta()).metrics(datasets.vdjdb_beta(epitopes=True))
+        metrics = Clustering().fit(self.cdr3).metrics(self.epitopes)
         self.assertGreater(metrics.purity()[0], 0.6)
         self.assertGreater(metrics.consistency()[0], 0.12)
         self.assertGreater(metrics.retention(), 0.21)
