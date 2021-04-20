@@ -34,30 +34,33 @@ def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     if edgelist is None:
         edgelist = create_edgelist(cdr3)
 
-    G = nx.parse_adjlist(edgelist, nodetype=str)
-    m = nx.to_scipy_sparse_matrix(G)
-
-    # Run MC
-    result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
-    mcl_output = mcl.get_clusters(result)
-    identifiers = list(G.nodes())
-
-    # Map cluster ids back to seqs
-    cluster_ids = dict()
-    for i in range(len(mcl_output)):
-        cluster_ids[i] = list(identifiers[i] for i in mcl_output[i])
-
-    # Generate nodelist
-    clusters = {"CDR3": [], "cluster": []}
-    for c in cluster_ids:
-        for seq in cluster_ids[c]:
-            clusters["CDR3"].append(seq)
-            clusters["cluster"].append(c)
-    clusters = pd.DataFrame(data=clusters)
-
-    # Write to file
-    if outfile is not None:
-        clusters.to_csv(outfile, sep="\t", index=False)
+    try:
+        G = nx.parse_adjlist(edgelist, nodetype=str)
+        m = nx.to_scipy_sparse_matrix(G)
+    
+        # Run MCL
+        result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
+        mcl_output = mcl.get_clusters(result)
+        identifiers = list(G.nodes())
+    
+        # Map cluster ids back to seqs
+        cluster_ids = dict()
+        for i in range(len(mcl_output)):
+            cluster_ids[i] = list(identifiers[i] for i in mcl_output[i])
+    
+        # Generate nodelist
+        clusters = {"CDR3": [], "cluster": []}
+        for c in cluster_ids:
+            for seq in cluster_ids[c]:
+                clusters["CDR3"].append(seq)
+                clusters["cluster"].append(c)
+        clusters = pd.DataFrame(data=clusters)
+    
+        # Write to file
+        if outfile is not None:
+            clusters.to_csv(outfile, sep="\t", index=False)
+    except nx.NetworkXError:
+        clusters = pd.DataFrame()
 
     return clusters
 
@@ -114,6 +117,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
 
 def MCL_from_preclusters(cdr3, preclust):
     initiate = True
+    nodelist = pd.DataFrame()
     for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c)
@@ -126,7 +130,11 @@ def MCL_from_preclusters(cdr3, preclust):
                 nodelist = nodelist.append(nodes)
         # If no edges can be found, leave cluster as is
         except nx.NetworkXError:
-            cluster = pd.DataFrame({"CDR3": c,
-                                    "cluster": [nodelist["cluster"].max() + 1] * len(c)})
-            nodelist = nodelist.append(cluster)
+            try:
+                cluster = pd.DataFrame({"CDR3": c,
+                                        "cluster": [nodelist["cluster"].max() + 1] * len(c)})
+                nodelist = nodelist.append(cluster)
+            except KeyError:
+                cluster = pd.DataFrame({"CDR3": c, "cluster": [0] * len(c)})
+                nodelist = nodelist.append(cluster)
     return nodelist
