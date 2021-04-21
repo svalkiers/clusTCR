@@ -65,8 +65,8 @@ def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     return clusters
 
 
-def MCL_multi(edgelist, cdr3):
-    return MCL(cdr3, edgelist)
+def MCL_multi(edgelist, cdr3, mcl_hyper=[1.2,2]):
+    return MCL(cdr3, edgelist, mcl_hyper=mcl_hyper)
 
 
 def clusters_without_hd1_edges(edges, cluster_contents):
@@ -90,7 +90,7 @@ def clusters_without_hd1_edges(edges, cluster_contents):
     return clusters
 
 
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus, mcl_hyper):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
@@ -104,6 +104,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
         nodelist = parmap.map(MCL_multi,
                               remaining_edges,
                               cdr3,
+                              mcl_hyper=mcl_hyper,
                               pm_parallel=True,
                               pm_pool=pool)
         nodelist += clusters
@@ -115,17 +116,17 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     return pd.concat(nodelist, ignore_index=True)
 
 
-def MCL_from_preclusters(cdr3, preclust):
+def MCL_from_preclusters(cdr3, preclust, mcl_hyper):
     initiate = True
     nodelist = pd.DataFrame()
     for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c)
             if initiate:
-                nodelist = MCL(cdr3, edges)
+                nodelist = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
                 initiate = False
             else:
-                nodes = MCL(cdr3, edges)
+                nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
                 nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
                 nodelist = nodelist.append(nodes)
         # If no edges can be found, leave cluster as is
