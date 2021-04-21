@@ -24,7 +24,7 @@ def GLIPH2(data, outfile=None):
 
     # Reformat gliph2 clustering results
     clusters = pd.DataFrame()
-    # nodelist = {'CDR3': [], 'cluster': []}
+    nodelist = {'CDR3': [], 'cluster': []}
     with open('metarepertoire_output_cluster.txt', 'r') as f:
         results = f.read().splitlines()
     c = 0
@@ -39,11 +39,11 @@ def GLIPH2(data, outfile=None):
             clusters = clusters.append(nodes)
             c += 1
             
-    # for cluster in clusters:
-    #     for seq in clusters[cluster]:
-    #         nodelist['CDR3'].append(seq)
-    #         nodelist['cluster'].append(cluster)
-    # nodelist = pd.DataFrame(nodelist)
+    for cluster in clusters:
+        for seq in clusters[cluster]:
+            nodelist['CDR3'].append(seq)
+            nodelist['cluster'].append(cluster)
+    nodelist = pd.DataFrame(nodelist)
 
     if outfile:
         print('Saving output to: \n --> {}'.format(outfile))
