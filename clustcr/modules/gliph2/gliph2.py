@@ -23,24 +23,30 @@ def GLIPH2(data, outfile=None):
     print('Elapsed time: {} seconds.'.format(t))
 
     # Reformat gliph2 clustering results
-    clusters = {}
-    nodelist = {'CDR3': [], 'cluster': []}
+    clusters = pd.DataFrame()
+    # nodelist = {'CDR3': [], 'cluster': []}
     with open('metarepertoire_output_cluster.txt', 'r') as f:
         results = f.read().splitlines()
     c = 0
     for line in results:
-        cluster = line.split(' ')[4:]
+        columns = line.split(' ')
+        motif = columns[3]
+        cluster = columns[4:]
         if len(cluster) >= 2:
-            clusters[c] = cluster
+            nodes = pd.DataFrame({'CDR3':cluster})
+            nodes['cluster'] = c
+            nodes['motif'] = motif
+            clusters = clusters.append(nodes)
             c += 1
-    for cluster in clusters:
-        for seq in clusters[cluster]:
-            nodelist['CDR3'].append(seq)
-            nodelist['cluster'].append(cluster)
-    nodelist = pd.DataFrame(nodelist)
+            
+    # for cluster in clusters:
+    #     for seq in clusters[cluster]:
+    #         nodelist['CDR3'].append(seq)
+    #         nodelist['cluster'].append(cluster)
+    # nodelist = pd.DataFrame(nodelist)
 
     if outfile:
         print('Saving output to: \n --> {}'.format(outfile))
         nodelist.to_csv(outfile, sep='\t', index=False)
 
-    return nodelist, t
+    return clusters, t

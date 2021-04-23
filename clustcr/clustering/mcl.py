@@ -45,30 +45,33 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
     if edgelist is None:
         edgelist = create_edgelist(cdr3, method=distance_metric)
 
-    G = nx.parse_adjlist(edgelist, nodetype=str)
-    m = nx.to_scipy_sparse_matrix(G)
-
-    # Run MC
-    result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
-    mcl_output = mcl.get_clusters(result)
-    identifiers = list(G.nodes())
-
-    # Map cluster ids back to seqs
-    cluster_ids = dict()
-    for i in range(len(mcl_output)):
-        cluster_ids[i] = list(identifiers[i] for i in mcl_output[i])
-
-    # Generate nodelist
-    clusters = {"CDR3": [], "cluster": []}
-    for c in cluster_ids:
-        for seq in cluster_ids[c]:
-            clusters["CDR3"].append(seq)
-            clusters["cluster"].append(c)
-    clusters = pd.DataFrame(data=clusters)
-
-    # Write to file
-    if outfile is not None:
-        clusters.to_csv(outfile, sep="\t", index=False)
+    try:
+        G = nx.parse_adjlist(edgelist, nodetype=str)
+        m = nx.to_scipy_sparse_matrix(G)
+    
+        # Run MCL
+        result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
+        mcl_output = mcl.get_clusters(result)
+        identifiers = list(G.nodes())
+    
+        # Map cluster ids back to seqs
+        cluster_ids = dict()
+        for i in range(len(mcl_output)):
+            cluster_ids[i] = list(identifiers[i] for i in mcl_output[i])
+    
+        # Generate nodelist
+        clusters = {"CDR3": [], "cluster": []}
+        for c in cluster_ids:
+            for seq in cluster_ids[c]:
+                clusters["CDR3"].append(seq)
+                clusters["cluster"].append(c)
+        clusters = pd.DataFrame(data=clusters)
+    
+        # Write to file
+        if outfile is not None:
+            clusters.to_csv(outfile, sep="\t", index=False)
+    except nx.NetworkXError:
+        clusters = pd.DataFrame()
 
     return clusters
 
@@ -111,6 +114,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
         nodelist = parmap.map(MCL_multi,
                               remaining_edges,
                               cdr3,
+                              mcl_hyper=mcl_hyper,
                               pm_parallel=True,
                               pm_pool=pool)
         nodelist += clusters
@@ -129,10 +133,9 @@ def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
             edges = create_edgelist(c, method=distance_metric)
             if initiate:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
-                nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
                 initiate = False
             else:
-                nodes = MCL(cdr3, edges)
+                nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
                 nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
                 nodelist = nodelist.append(nodes)
         # If no edges can be found, leave cluster as is
