@@ -73,8 +73,8 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
     return clusters
 
 
-def MCL_multi(edgelist, cdr3):
-    return MCL(cdr3, edgelist)
+def MCL_multi(edgelist, cdr3, mlc_hyper=[1.2,2]):
+    return MCL(cdr3, edgelist, mcl_hyper=mcl_hyper)
 
 
 def clusters_without_hd1_edges(edges, cluster_contents):
@@ -123,11 +123,13 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
 
 def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
     initiate = True
+    nodelist = pd.DataFrame()
     for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c, method=distance_metric)
             if initiate:
-                nodelist = MCL(cdr3, edges)
+                nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
+                nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
                 initiate = False
             else:
                 nodes = MCL(cdr3, edges)
@@ -135,7 +137,11 @@ def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
                 nodelist = nodelist.append(nodes)
         # If no edges can be found, leave cluster as is
         except nx.NetworkXError:
-            cluster = pd.DataFrame({"CDR3": c,
-                                    "cluster": [nodelist["cluster"].max() + 1] * len(c)})
-            nodelist = nodelist.append(cluster)
+            try:
+                cluster = pd.DataFrame({"CDR3": c,
+                                        "cluster": [nodelist["cluster"].max() + 1] * len(c)})
+                nodelist = nodelist.append(cluster)
+            except KeyError:
+                cluster = pd.DataFrame({"CDR3": c, "cluster": [0] * len(c)})
+                nodelist = nodelist.append(cluster)
     return nodelist
