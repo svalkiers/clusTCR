@@ -5,6 +5,7 @@ from os.path import join, exists
 from os import mkdir, getcwd
 from shutil import rmtree
 import random
+import time
 
 from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering, properties
@@ -13,8 +14,20 @@ from .metrics import Metrics
 from .multirepertoire_feature_matrix import MultiRepertoireFeatureMatrix
 from .tools import create_edgelist
 
-
-class ClusteringResult:
+def timeit(myfunc):
+    # Decorator to keep track of time required to run a function
+    def timed(*args, **kwargs):
+        start = time.time()
+        result = myfunc(*args, **kwargs)
+        end = time.time()
+        print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
+        with open("/home/sebastiaan/Desktop/time_2.csv", 'a+') as f:
+            f.write(f'\'{myfunc.__name__}\',{(end-start):.3f}\n')
+        return result
+    
+    return timed
+    
+class ClusteringResult: 
     def __init__(self, nodelist):
         self.clusters_df = nodelist
         
@@ -67,13 +80,15 @@ class Clustering:
 
     def __init__(self,
                  method='two-step',
+                 distance_metric='hamming',
                  n_cpus: Union[str, int] = 1,
                  use_gpu=False,
                  faiss_cluster_size=5000,
                  mcl_params=None,
                  faiss_training_data=None,
                  max_sequence_size=None,
-                 fitting_data_size=None):
+                 fitting_data_size=None,
+                 rnd_chunk_size=5000):
 
         """
         Parameters
@@ -94,10 +109,12 @@ class Clustering:
         """
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
         self.method = method.upper()
+        self.distance_metric = distance_metric.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
         self._set_n_cpus(n_cpus)
+        self.rnd_chunk_size = rnd_chunk_size
 
         # For batch processing
         self.faiss_training_data = faiss_training_data
@@ -114,7 +131,8 @@ class Clustering:
 
         available = ["MCL",
                      "FAISS",
-                     "TWO-STEP"]
+                     "TWO-STEP",
+                     "RANDOM"]
         assert self.method in available, f"Method not available, please choose one of the following methods:\n {available}"
 
     def _set_n_cpus(self, n_cpus):
@@ -128,6 +146,18 @@ class Clustering:
             self.n_cpus = multiprocessing.cpu_count()
         else:
             self.n_cpus = n_cpus
+            
+    def _random(self, cdr3):
+        n = round(len(cdr3) / self.rnd_chunk_size)
+        sequences = list(cdr3)
+        random.shuffle(sequences)
+        chunks = [sequences[i::n] for i in range(n)]
+        clusters = {"CDR3": [], "cluster": []}
+        for i, chunk in enumerate(chunks):
+            for seq in chunk:
+                clusters["CDR3"].append(seq)
+                clusters["cluster"].append(i)
+        return ClusteringResult(pd.DataFrame(clusters))
 
     def _train_faiss(self, cdr3: pd.Series, get_profiles=False):
         clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
@@ -140,7 +170,8 @@ class Clustering:
             return clustering, profiles
         else:
             return clustering
-
+        
+    @timeit
     def _faiss(self, cdr3: pd.Series):
         """
         FAISS clustering method
@@ -170,7 +201,7 @@ class Clustering:
             clusters["cluster"].append(int(cluster))
 
         return ClusteringResult(pd.DataFrame(clusters))
-
+    
     def _twostep(self, cdr3):
         """
         Two-step clustering procedure for speeding up CDR3 clustering by
@@ -192,9 +223,9 @@ class Clustering:
 
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.n_cpus, self.mcl_params))
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.distance_metric, self.n_cpus, self.mcl_params))
         else:
-            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, self.mcl_params))
+            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, self.distance_metric, self.mcl_params))
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
@@ -223,7 +254,7 @@ class Clustering:
         for i in range(0, npreclusters, clusters_per_batch):
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
-            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.n_cpus)
+            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.n_cpus)
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
             if calc_feature_matrix:
@@ -266,8 +297,10 @@ class Clustering:
             Table containing sequences and their corresponding cluster ids.
         """
         if self.method == 'MCL':
-            return ClusteringResult(MCL(cdr3, mcl_hyper=self.mcl_params))
+            return ClusteringResult(MCL(cdr3, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params))
         elif self.method == 'FAISS':
             return self._faiss(cdr3)
+        elif self.method == 'RANDOM':
+            return self._random(cdr3)
         else:
             return self._twostep(cdr3)
