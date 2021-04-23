@@ -224,9 +224,13 @@ class Clustering:
 
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.distance_metric, self.n_cpus))
+            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, 
+                                                                         self.distance_metric, 
+                                                                         self.mcl_params,
+                                                                         self.n_cpus))
         else:
-            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, self.distance_metric))
+            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, 
+                                                         self.distance_metric))
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'

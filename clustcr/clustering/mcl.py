@@ -97,8 +97,7 @@ def clusters_without_hd1_edges(edges, cluster_contents):
         del edges[id]
     return clusters
 
-@timeit
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_cpus):
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
@@ -122,8 +121,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_cpus
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-@timeit
-def MCL_from_preclusters(cdr3, preclust, distance_metric):
+def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
     initiate = True
     for c in preclust.cluster_contents():
         try:
