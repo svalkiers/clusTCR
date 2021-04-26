@@ -21,10 +21,7 @@ def timeit(myfunc):
         result = myfunc(*args, **kwargs)
         end = time.time()
         print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
-        with open("/home/sebastiaan/Desktop/time_2.csv", 'a+') as f:
-            f.write(f'\'{myfunc.__name__}\',{(end-start):.3f}\n')
         return result
-    
     return timed
     
 class ClusteringResult: 
@@ -171,7 +168,6 @@ class Clustering:
         else:
             return clustering
         
-    @timeit
     def _faiss(self, cdr3: pd.Series):
         """
         FAISS clustering method
@@ -202,6 +198,7 @@ class Clustering:
 
         return ClusteringResult(pd.DataFrame(clusters))
     
+    @timeit
     def _twostep(self, cdr3):
         """
         Two-step clustering procedure for speeding up CDR3 clustering by

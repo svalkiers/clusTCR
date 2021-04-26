@@ -15,10 +15,7 @@ def timeit(myfunc):
         result = myfunc(*args, **kwargs)
         end = time.time()
         print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
-        with open("/home/sebastiaan/Desktop/time.csv", 'a+') as f:
-            f.write(f'\'{myfunc.__name__}\',{(end-start):.3f}\n')
         return result
-
     return timed
 
 def create_mapping(characters):
