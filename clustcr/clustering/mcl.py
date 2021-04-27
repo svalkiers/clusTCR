@@ -76,7 +76,7 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
     return clusters
 
 
-def MCL_multi(edgelist, cdr3, mlc_hyper=[1.2,2]):
+def MCL_multi(edgelist, cdr3, mcl_hyper=[1.2,2]):
     return MCL(cdr3, edgelist, mcl_hyper=mcl_hyper)
 
 
@@ -110,6 +110,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
     clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
     # Perform MCL on other clusters
+    print(n_cpus)
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(MCL_multi,
                               remaining_edges,
@@ -127,12 +128,13 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
 
 def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
     initiate = True
-    nodelist = pd.DataFrame()
+    nodelist = pd.DataFrame(columns=["CDR3", "cluster"])
     for c in preclust.cluster_contents():
         try:
             edges = create_edgelist(c, method=distance_metric)
             if initiate:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
+                nodelist = nodelist.append(nodes)
                 initiate = False
             else:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
