@@ -251,7 +251,7 @@ class Clustering:
         for i in range(0, npreclusters, clusters_per_batch):
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
-            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.n_cpus)
+            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus)
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
             if calc_feature_matrix:
