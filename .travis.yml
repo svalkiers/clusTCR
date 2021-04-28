@@ -5,34 +5,26 @@ python:
   - "3.8"
 
 install:
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
   - conda config --set always_yes yes
   - conda update -q conda
-  - conda install conda-build anaconda-client
-  - conda config --set auto_update_conda no
-  - conda config --add channels pytorch
-  - conda config --add channels bioconda
-  - conda config --add channels conda-forge
-  - conda build conda/clustcr/
-  - conda install --use-local clustcr
-  - conda build conda/clustcr-gpu/
-  - conda info -a
+  - source $(conda info --root)/etc/profile.d/conda.sh
+  - conda env create -f conda/env.yml
+  - conda activate tcr
 
 script:
-  - cd test
-  - python3 -m unittest discover -s ./ -p '*.py'
+  - cd test && python3 -m unittest discover -s ./ -p '*.py'
 
 after_success:
   - cd ..
   - test $TRAVIS_BRANCH = "main" && test $TRAVIS_PULL_REQUEST = "false" &&
+    conda install conda-build anaconda-client &&
+    conda config --set auto_update_conda no &&
     conda config --set anaconda_upload yes &&
+    conda config --add channels pytorch &&
+    conda config --add channels bioconda &&
+    conda config --add channels conda-forge &&
     conda build conda/clustcr/ --user svalkiers --token $CONDA_UPLOAD_TOKEN &&
     conda build conda/clustcr-gpu/ --user svalkiers --token $CONDA_UPLOAD_TOKEN
-
