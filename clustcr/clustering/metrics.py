@@ -49,7 +49,7 @@ class Metrics:
         '''
         Cluster retention is the fraction of sequences that has been assigned to any cluster.
         '''
-        return len(self.nodelist) / len(self.epidata["CDR3"].unique())
+        return len(self.nodelist.CDR3.unique()) / len(self.epidata.CDR3.unique())
 
     def purity(self, conf_mat=None):
         '''
