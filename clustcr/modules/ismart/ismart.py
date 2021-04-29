@@ -23,8 +23,12 @@ def iSMART(data, outfile=None):
     print('Elapsed time: {} seconds.'.format(t))
 
     with open('input_clustered_v3.txt', 'r') as f:
-        clusters = f.read().splitlines()[3:]
-        clusters = pd.DataFrame([x.split('\t') for x in clusters], columns=['CDR3', 'cluster'])
+        if 'V' in data.columns:
+            clusters = f.read().splitlines()[3:]
+            clusters = pd.DataFrame([x.split('\t') for x in clusters], columns=['CDR3', 'V', 'cluster'])
+        else:
+            clusters = f.read().splitlines()[3:]
+            clusters = pd.DataFrame([x.split('\t') for x in clusters], columns=['CDR3', 'cluster'])
 
     # Save output to correct destination
     if outfile:
