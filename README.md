@@ -1,4 +1,4 @@
-# clusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences [![Build Status](https://travis-ci.com/svalkiers/clusTCR.svg?branch=main)](https://travis-ci.com/svalkiers/clusTCR) [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr)
+# ClusTCR: a Python interface for rapid clustering of large sets of CDR3 sequences with unknown antigen specificity [![Build Status](https://travis-ci.com/svalkiers/clusTCR.svg?branch=main)](https://travis-ci.com/svalkiers/clusTCR) [![conda](https://anaconda.org/svalkiers/clustcr/badges/installer/conda.svg)](https://anaconda.org/svalkiers/clustcr)
 
 A two-step clustering approach that combines the speed of the [Faiss Clustering Library](https://github.com/facebookresearch/faiss) with the accuracy of [Markov Clustering Algorithm](https://micans.org/mcl/)
 
