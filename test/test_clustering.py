@@ -24,6 +24,11 @@ class ClusteringTest(TestBase):
     def test_faiss(self):
         Clustering(method='faiss').fit(self.cdr3)
 
+    def test_alphabeta(self):
+        df = datasets.vdjdb_paired()
+        alpha, cdr3 = df['CDR3_alpha'], df['CDR3_beta']
+        Clustering().fit(cdr3, alpha)
+
     def test_multiprocessing(self):
         for cpu in [-1, 0, 1, 2, 'all']:
             for method in ['two-step', 'faiss', 'mcl']:

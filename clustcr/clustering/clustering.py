@@ -23,28 +23,28 @@ def timeit(myfunc):
         print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
         return result
     return timed
-    
-class ClusteringResult: 
+
+class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
-        
+
     def summary(self):
         motifs = FeatureGenerator(self.clusters_df).clustermotif()
         summ = self.clusters_df.cluster.value_counts().to_frame()
-        summ.rename(columns={'cluster':'size'},inplace=True)
+        summ.rename(columns={'cluster': 'size'}, inplace=True)
         summ = summ.rename_axis('cluster_idx').reset_index()
         summ['motif'] = motifs.values()
         return summ
-    
-    def write_to_csv(self, path=join(getcwd(),'clusTCR_clusters.csv')):
-        return self.clusters_df.to_csv(path,index=False)
-    
+
+    def write_to_csv(self, path=join(getcwd(), 'clusTCR_clusters.csv')):
+        return self.clusters_df.to_csv(path, index=False)
+
     def export_network(self, filename='clusTCR_network.txt'):
         return create_edgelist(self.clusters_df.CDR3, filename)
 
     def cluster_contents(self):
         return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
-    
+
     def compute_features(self, compute_pgen=True):
         return FeatureGenerator(self.clusters_df).get_features(compute_pgen=compute_pgen)
 
@@ -143,7 +143,7 @@ class Clustering:
             self.n_cpus = multiprocessing.cpu_count()
         else:
             self.n_cpus = n_cpus
-            
+
     def _random(self, cdr3):
         n = round(len(cdr3) / self.rnd_chunk_size)
         sequences = list(cdr3)
@@ -167,8 +167,8 @@ class Clustering:
             return clustering, profiles
         else:
             return clustering
-        
-    def _faiss(self, cdr3: pd.Series):
+
+    def _faiss(self, cdr3: pd.Series) -> ClusteringResult:
         """
         FAISS clustering method
 
@@ -197,9 +197,9 @@ class Clustering:
             clusters["cluster"].append(int(cluster))
 
         return ClusteringResult(pd.DataFrame(clusters))
-    
+
     @timeit
-    def _twostep(self, cdr3):
+    def _twostep(self, cdr3) -> ClusteringResult:
         """
         Two-step clustering procedure for speeding up CDR3 clustering by
         pre-sorting sequences into superclusters. A second clustering step
@@ -251,7 +251,7 @@ class Clustering:
         for i in range(0, npreclusters, clusters_per_batch):
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
-            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.n_cpus)
+            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus)
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
             if calc_feature_matrix:
@@ -280,19 +280,13 @@ class Clustering:
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
-    def fit(self, cdr3: pd.Series):
+    def fit(self, cdr3: pd.Series, alpha: pd.Series = None) -> ClusteringResult:
         """
-        Function that calls the indicated clustering method and returns clusters
-        in a nodelist format.
-        
-        Parameters
-        ----------
-
-        Returns
-        -------
-        nodelist : TYPE
-            Table containing sequences and their corresponding cluster ids.
+        Function that calls the indicated clustering method and returns clusters in a ClusteringResult
         """
+        if alpha is not None:
+            assert len(cdr3) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
+            cdr3 = cdr3.add(alpha)
         if self.method == 'MCL':
             return ClusteringResult(MCL(cdr3, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params))
         elif self.method == 'FAISS':

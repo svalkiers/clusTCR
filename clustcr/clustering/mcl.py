@@ -71,7 +71,7 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
         if outfile is not None:
             clusters.to_csv(outfile, sep="\t", index=False)
     except nx.NetworkXError:
-        clusters = pd.DataFrame()
+        clusters = pd.DataFrame({"CDR3": [], "cluster": []})
 
     return clusters
 

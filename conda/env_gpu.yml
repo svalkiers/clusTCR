@@ -13,3 +13,4 @@ dependencies:
       - markov_clustering
       - pyteomics
       - tcrdist3
+      - python-levenshtein
