@@ -110,7 +110,6 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
     clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
     # Perform MCL on other clusters
-    print(n_cpus)
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(MCL_multi,
                               remaining_edges,
