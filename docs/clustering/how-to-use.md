@@ -37,6 +37,17 @@ cdr3 = datasets.test_cdr3()
 output = clustering.fit(cdr3)
 ```
 
+#### Including CDR3 alpha chain
+In case you have data that includes the alpha chain, you can optionally use this in the clustering (beware that this will drastically change your results).
+To include, simply pass a Series of your alpha chain to the fit method.
+As an example, we provide a vdjdb dataset that includes this data.
+
+```python
+data = datasets.vdjdb_paired()
+cdr3, alpha = data['CDR3_beta'], data['CDR3_alpha']
+output = clustering.fit(cdr3, alpha=alpha)
+```
+
 ### ClusteringResult
 
 #### Dataframe
