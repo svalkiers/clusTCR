@@ -19,7 +19,11 @@ def evaluate_distance_metrics(start, end, step_size, replicates, filename=None):
         print('###################')
         for i in range(replicates):
             
-            beta = datasets.vdjdb_beta().sample(n)
+            try:
+                beta = datasets.vdjdb_beta().sample(n)
+            except ValueError:
+                break
+            
             epi = datasets.vdjdb_beta(epitopes=True)
             epi = epi[epi.CDR3.isin(beta)]
             
@@ -42,8 +46,8 @@ def evaluate_distance_metrics(start, end, step_size, replicates, filename=None):
             final = final.append(summ_HD)
             final = final.append(summ_LD)
             
-    if filename is not None:
-        final.to_csv(join('./results/',filename), sep='\t', index=False)
+        if filename is not None:
+            final.to_csv(join('./results/',filename), sep='\t', index=False)
             
     return final
     
@@ -103,8 +107,11 @@ def show_results(data):
     ax3.text(-0.25, 1.50, 'C', transform=ax3.transAxes,fontsize=20, fontweight='bold', va='top', ha='right')
     ax4.text(-0.25, 1.50, 'D', transform=ax4.transAxes,fontsize=20, fontweight='bold', va='top', ha='right')
     ax5.text(-0.1, 1.50, 'E', transform=ax5.transAxes,fontsize=20, fontweight='bold', va='top', ha='right')
+    
+    fig.savefig('./results/figures/hd_vs_ld.eps', format='eps', bbox_inches='tight')
      
 
 if __name__=="__main__":
-    results = evaluate_distance_metrics(1000,30000,1000,1)
+    # results = evaluate_distance_metrics(27400,30001,100,1,filename='hd_vs_ld_part_2.tsv')
+    results = pd.read_csv('./results/hd_vs_ld.tsv', sep='\t')
     show_results(results)
