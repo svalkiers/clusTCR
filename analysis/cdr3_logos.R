@@ -8,7 +8,7 @@ clusters <- read.table('clusters.txt', header=TRUE, sep="\t")
 # For each cluster, make a list of sequences
 sequences = list()
 for (i in unique(clusters$cluster)){
-  sequences[[i]] <- clusters[clusters$cluster==i,]$CDR3
+  sequences[[i+1]] <- clusters[clusters$cluster==i,]$CDR3
 }
 sequences <- sequences[lengths(sequences) != 0]
 
