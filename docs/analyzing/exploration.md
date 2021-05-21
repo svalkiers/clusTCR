@@ -46,7 +46,7 @@ predictions = analysis.predict_quality()
 
 ##### Training your own model
 
-You can also train your own model by creating a `ModelTraining` object. To do this, you will need to provide the following three arguments: features (see features page [ADD LINK]), results from the clustering and epitope data corresponding to the CDR3 sequences used for clustering.
+You can also train your own model by creating a `ModelTraining` object. To do this, you will need to provide the following three arguments: features (see [features](./features.md) page), results from the clustering and epitope data corresponding to the CDR3 sequences used for clustering.
 
 ```python
 from clustcr import ModelTraining

@@ -5,9 +5,9 @@ nav_order: 7
 has_children: False
 ---
 
-## clusTCR demo
+## ClusTCR demo
 
-In this section we will go over some typical scenarios that you might encounter when you will use clusTCR.
+In this section we will go over some typical scenarios that you might encounter when you will use ClusTCR.
 
 ### > Scenario 1: clustering a single repertoire file
 
@@ -49,7 +49,7 @@ clustering = Clustering(n_cpus=8) # Clustering parameters
 result = clustering.fit(data) # This will generate the ClusteringResult object
 ```
 
-That's it! You have successfully clustered your RepSeq file with clusTCR. To retrieve the clusters, you can call the `clusters_df` method on the `ClusteringResult` object...
+That's it! You have successfully clustered your RepSeq file with ClusTCR. To retrieve the clusters, you can call the `clusters_df` method on the `ClusteringResult` object...
 
 ```python
 result.clusters_df
