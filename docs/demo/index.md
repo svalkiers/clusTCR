@@ -114,7 +114,7 @@ Suppose that you have a data set containing various TCR repertoire samples, whic
 Start by importing the different modules that we'll need:
 
 ```python
-from clustcr import read_cdr3, metarepetoire, Clustering
+from clustcr import read_cdr3, metarepertoire, Clustering
 import os
 ```
 
@@ -132,7 +132,7 @@ datadir = '/path_to_data/'
 
 # Now we count the number of sequences that are present in the data set
 # We use os.listdir() to list all the files in the specified directory
-total_sequences = 0
+total_cdr3s = 0
 for file in os.listdir(datadir):
     total_cdr3s += len(read_cdr3(datadir + file, 
                                  data_format='immuneaccess'))
