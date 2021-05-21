@@ -61,7 +61,7 @@ output.clusters_df
 |      |           CDR3  | cluster |
 | :------- | :------- | :---------- |
 | 0   |   CASSPSGTPYEQYF |       0 |
-| 1   |   CASSPSGTPYERYF |       0 | 
+| 1   |   CASSPSGTPYERYF |       0 |
 | 2   |  CASNELASGTDTQYF |       1 |
 | 3   |  CASSELASGTDTQYF |      1 |
 | 4   |  CASSALASGTDTQYF |       1 |
@@ -95,10 +95,7 @@ output.cluster_contents()
 
 #### Summary
 
-You can explore the clustering results by executing the `.summary()` on the ClusteringResult object. 
-This will provide you with a dataframe that contains the cluster index, number of sequences in the cluster, and a consensus motif for that cluster. 
-Shared dominance of amino acids is indicated by square brackets (' [ ] ').
-If there is no dominant amino acid, the position is denoted by a single dot (' . ').
+You can explore the clustering results by executing the `.summary()` on the ClusteringResult object.  This will provide you with a `pandas.DataFrame` that contains the cluster index, number of sequences in the cluster, and a consensus motif for that cluster.  For every position, the amino acid frequency is calculated. The most dominant amino acid is selected and if it exceeds the predefined **cut-off** (default = 0.7), that position is represented by the dominant amino acid in **upper case**. Else, if the sum of the frequencies of the two most dominant amino acids exceed the cut-off, both of them are considered. However, if the frequency of one the two is 2x larger than the other, the most dominant amino acid of the two will be used to represent that position. To emphasize that the frequency of this amino acid on itself does not exceed the cut-off, it will be shown in **lower case**. Otherwise shared dominance of amino acids is indicated by **square brackets (' [ ] ')**. Positions where neither criteria are met are indicated with a **wild card symbol (' . ')**.
 
 ```python
 output.summary()
