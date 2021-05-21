@@ -28,8 +28,8 @@ class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
 
-    def summary(self):
-        motifs = FeatureGenerator(self.clusters_df).clustermotif()
+    def summary(self, motif_cutoff=.7):
+        motifs = FeatureGenerator(self.clusters_df).clustermotif(cutoff=motif_cutoff)
         summ = self.clusters_df.cluster.value_counts().to_frame()
         summ.rename(columns={'cluster': 'size'}, inplace=True)
         summ = summ.rename_axis('cluster_idx').reset_index()

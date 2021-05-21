@@ -172,7 +172,7 @@ class FeatureGenerator:
     
     
     
-    def clustermotif(self, method='standard', cutoff=.9):
+    def clustermotif(self, method='standard', cutoff=.7):
         """
         Calculate a consensus motif representation for a set of sequence
         based on the profile matrix.

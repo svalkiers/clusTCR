@@ -53,7 +53,7 @@ def profile_matrix(sequences : list):
     return profile
 
 
-def motif_from_profile(profile, method, cutoff=.9):
+def motif_from_profile(profile, method, cutoff=.7):
     '''
     Generate consensus sequence motif from a profile matrix.
     Square brackets [...] indicate multiple aa possibilities at that position.
@@ -64,11 +64,11 @@ def motif_from_profile(profile, method, cutoff=.9):
     
     if method.lower() == 'standard':
         for col in profile.columns:
-            if profile[col].max() > .5:
+            if profile[col].max() > cutoff:
                 consensus += profile[col].idxmax()
-            elif sum(profile[col].nlargest(2)) >= .5:
+            elif sum(profile[col].nlargest(2)) >= cutoff:
                 if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
-                    consensus += profile[col].idxmax()
+                    consensus += profile[col].idxmax().lower()
                 else:
                     char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
                     consensus += char
