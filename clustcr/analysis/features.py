@@ -38,7 +38,7 @@ class FeatureGenerator:
         assert correction in cfactors, "Unknown correction factor '{}', please choose one of the following: {}.".format(correction, cfactors)
         
         # Results
-        res = {"h":[], "size":[], "length":[]}
+        res = {"cluster":[], "h":[], "size":[], "length":[]}
         
         # Calculate average information content per amino acid position in cluster
         for clust in self.nodes["cluster"].unique():
@@ -78,12 +78,13 @@ class FeatureGenerator:
                         ic.append(information_content / np.log2(n))
                     elif correction == "ssc":
                         ic.append(np.log2(20) - (information_content + en))                        
-                    
+            
+            res["cluster"].append(clust)
             res["h"].append(np.average(ic))
             res["size"].append(n)
             res["length"].append(l)
         
-        return pd.DataFrame(res)
+        return pd.DataFrame(res).set_index("cluster", drop=True)
 
 
     
