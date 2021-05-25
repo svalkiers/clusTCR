@@ -141,7 +141,7 @@ for file in os.listdir(datadir):
 From this number, we can calculated the recommended sample size (see [clustering large data](../clustering/large-data.md) section). We can then take a sample from the data set using the `metarepertoire()` function.
 
 ```python
-training_sample_size = round(1000 * (total_sequences / 5000))
+training_sample_size = round(1000 * (total_cdr3s / 5000))
 training_sample = metarepertoire(directory=datadir,
                                  data_format='immuneaccess',
                                  n_sequences=training_sample_size)
@@ -157,7 +157,7 @@ Next, we make a Clustering object. However, this time we need to specify the bat
 
 ```python
 clustering = Clustering(faiss_training_data=training_sample,
-                        fitting_data_size=total_sequences,
+                        fitting_data_size=total_cdr3s,
                         max_sequence_size=max_seq_len,
                         n_cpus=8) # Multiprocessing using 8 CPUs
 ```
@@ -187,4 +187,3 @@ Once finished, you can clean up the intermediate results using the following com
 ```python
 clustering.batch_cleanup()
 ```
-
