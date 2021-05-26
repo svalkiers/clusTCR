@@ -31,6 +31,10 @@ $ conda install clustcr-gpu -c svalkiers -c bioconda -c pytorch -c conda-forge
 
 Mind that this is for specific GPUs only, see our [docs](https://svalkiers.github.io/clusTCR/) for more information.
 
+To **update** use a similar command
+```
+$ conda update clustcr -c svalkiers -c bioconda -c pytorch -c conda-forge
+```
 
 ## Development Guide
 
