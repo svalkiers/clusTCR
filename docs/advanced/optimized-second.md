@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Optimized clustering for large data sets
+title: Optimization of the second clustering step
 nav_order: 2
 parent: Advanced
 ---
 
-##  Optimizing the second clustering step
+##  Optimization of the second clustering step
 
 The ClusTCR clustering procedure can be further optimized to the user's needs by customizing the second clustering step. During this second step, ClusTCR looks for pairs of sequences that have a **Hamming distance (HD) of <= 1** within each supercluster. From this list of paired sequences, a **graph** is built, which is subsequently clustered using the Markov clustering algorithm (MCL). This method involved a random walk, determined by the probability value dictated by a series of Markov chains. The algorithm simulates stochastic flow and identifies densely interconnected regions in the graph where flow is high. The stochastic matrix, from which the probabilities are determined, is manipulated in two ways:
 

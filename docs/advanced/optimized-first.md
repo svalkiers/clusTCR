@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Optimized clustering for large data sets
+title: Optimization of the first clustering step
 nav_order: 1
 parent: Advanced
 ---
 
-##  Optimizing the first clustering step
+##  Optimization of the first clustering step
 
 ClusTCR was designed with the aim of clustering large AIRR data sets exceeding millions of unique sequences. To accommodate for algorithmic runtime and memory limitations, we have introduced a batch clustering procedure.  Nonetheless, it is possible to achieve more performant results by changing the basic hyperparameters. This provides the user with even more flexibility, allowing them to decide upon the trade-off between clustering speed and accuracy.  
 
