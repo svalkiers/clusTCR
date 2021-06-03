@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class MultiRepertoireFeatureMatrix:
+class MultiRepertoireClusterMatrix:
 
     def __init__(self):
         self.feature_dict = {}
