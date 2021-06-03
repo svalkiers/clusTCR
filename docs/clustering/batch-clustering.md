@@ -10,10 +10,28 @@ grand_parent: Clustering
 
 ## Batch Clustering Large Datasets
 
-Is your CDR3 dataset so big it simply cannot fit into your RAM memory when loading it? You've come to the right place.
+Is your CDR3 dataset so big it simply cannot fit into your RAM memory when loading it? Or do you have a large data set, consisting of a large number of samples? You've come to the right place.
 
-*clusTCR* includes methods to cluster data in batches with a comparable accuracy to the normal way of clustering. In
+ClusTCR includes methods to cluster data in batches with a comparable accuracy to the normal way of clustering. In
 this tutorial we'll go over the steps.
+
+#### Prepping the data
+
+The batch clustering functionality provided within the ClusTCR package requires that batches are separated into different files. Thus, if the data you want to cluster is stored in one file, you should split it up into different files with batch sizes that comfortably fit into your device's memory. Here we give an example of how you could do this. Suppose you have a very large repertoire file which you would like to split up into different files, each containing 100,000 sequences. Here's how you do it. Using the `pandas` library, you can read in a large data frame in different chunks. We can use this functionality to write each chunk to an individual file. An example:
+
+```python
+import pandas as pd
+import os
+
+# Make a new directory to store the chunks
+target_dir_name = 'my_tcr_chunks/'
+os.mkdir(target_dir_name)
+# Make a TextFileReader object to iteratively read the large repertoire file
+chunk_reader = pd.read_csv('large_file.tsv', sep='\t', chunksize=100000)
+# Use a for loop to write the different chunks to distinct files
+for n, chunk in enumerate(chunk_reader):
+    chunk.to_csv(os.path.join(target_dir_name, 'my_tcr_chunk_%s' % n))
+```
 
 #### Training
 
@@ -56,7 +74,7 @@ for file in files:
     clustering.batch_precluster(data)
 ```
 
-To store the preclusters, *clusTCR* stores them on disk, with a file for each precluster.
+To store the preclusters, ClusTCR stores them on disk, with a file for each precluster.
 
 
 #### Batch Clustering
@@ -84,4 +102,8 @@ To remove this at the end, the cleanup function can be called.
 ```python
 clustering.batch_cleanup()
 ```
+
+#### Applications
+
+In the next section, we discuss how we can use the functionality of the batch clustering procedure to construct a cluster matrix that describes how the clusters are distributed across samples.
 
