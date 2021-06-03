@@ -103,14 +103,14 @@ output.summary()
 
 |   |  cluster_idx | size  |              motif|
 | :------- | :------- | :---------- | : ------- |
-| 0 |            50 |   17 |   CASSPSGTPYE[RQ]YF|
-|1  |           5   | 14   |CASS[EA]LASGTDTQYF|
-|2  |           17  |  13  |      CASTRGSTDTQYF|
-|3  |           35  |  13  |       CASSSANYGYTF|
-|4  |           18  |  12  |       CASSSLNTEAFF|
+| 0 |           25 |  24 | CASSgg.YGYTF        |
+|1  |           0   | 23  |CASS.RSTDTQYF|
+|2  |          15  |  15  | CASSEA[AS]GGFYNEQFF |
+|3  |          41  |  15  | CASSL[LM]GPGQPQHF |
+|4  |           5  |  14  | CSAR.GLNNEQFF |
 |.. |          ...  | ...  |                ...|
-|197 |          86  |   2  |     CASTGG[LS]GYTF|
-|198 |          85  |   2  |   CASS[LF]GSYNEQFF|
-|199 |          84  |   2  | CASSPRTSG[PT]YEQYF|
-|200 |          83  |   2  |CASS[IF]TLGTGGVEQYF|
-|201 |         201  |   2  |CASSL[RI]GVSSYNEQFF|
+|235 |        135  |   2  | CASS[LP]GWGLDQPQHF |
+|236 |        137  |   2  | CASSLLGQ[DY]NSPLHF |
+|237 |         26  |   2  | CASSLEG[DY]TEAFF |
+|238 |        139  |   2  | CASSSTGGGG[AT]EAFF  |
+|239 |       239  |   2  |CASS[EL]GRETQYF|
