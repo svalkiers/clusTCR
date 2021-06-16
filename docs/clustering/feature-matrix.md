@@ -1,6 +1,6 @@
 ---
 layout: default 
-title: Feature Matrix
+title: Cluster Matrix
 nav_order: 2
 parent: Large Datasets
 grand_parent: Clustering
@@ -43,13 +43,13 @@ Afterwards, we do the batch clustering and simply specify that we want the clust
 Note that this process takes around 1 extra second per precluster.
 
 ```python
-for cluster in clustering.batch_cluster(calc_feature_matrix=True):
+for cluster in clustering.batch_cluster(calc_cluster_matrix=True):
     print(cluster.clusters_df)
 ```
 
 Lastly, the cluster matrix can be accessed
 
 ```python
-clustering.batch_feature_matrix()
+clustering.batch_cluster_matrix()
 ```
 
