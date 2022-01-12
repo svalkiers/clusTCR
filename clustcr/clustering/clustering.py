@@ -30,10 +30,12 @@ class ClusteringResult:
 
     def summary(self, motif_cutoff=.7):
         motifs = FeatureGenerator(self.clusters_df).clustermotif(cutoff=motif_cutoff)
-        summ = self.clusters_df.cluster.value_counts().to_frame()
-        summ.rename(columns={'cluster': 'size'}, inplace=True)
-        summ = summ.rename_axis('cluster_idx').reset_index()
-        summ['motif'] = motifs.values()
+        sizes = self.clusters_df.cluster.value_counts().sort_index()
+        summ = pd.DataFrame({"size":sizes.values,"motif":motifs.values()})
+        # summ = self.clusters_df.cluster.value_counts().to_frame()
+        # summ.rename(columns={'cluster': 'size'}, inplace=True)
+        # summ = summ.rename_axis('cluster_idx').reset_index()
+        # summ['motif'] = motifs.values()
         return summ
 
     def write_to_csv(self, path=join(getcwd(), 'clusTCR_clusters.csv')):
