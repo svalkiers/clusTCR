@@ -20,7 +20,7 @@ def timeit(myfunc):
         start = time.time()
         result = myfunc(*args, **kwargs)
         end = time.time()
-        print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
+        print(f'Total time to run ClusTCR: {(end-start):.3f}s')
         return result
     return timed
 
@@ -200,7 +200,6 @@ class Clustering:
 
         return ClusteringResult(pd.DataFrame(clusters))
 
-    @timeit
     def _twostep(self, cdr3) -> ClusteringResult:
         """
         Two-step clustering procedure for speeding up CDR3 clustering by
@@ -219,12 +218,53 @@ class Clustering:
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
-
+        
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.distance_metric, self.mcl_params, self.n_cpus))
+            return ClusteringResult(
+                MCL_multiprocessing_from_preclusters(
+                    cdr3, super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                    )
+                )
         else:
-            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, self.distance_metric, self.mcl_params))
+            return ClusteringResult(
+                MCL_from_preclusters(
+                    cdr3, super_clusters, self.distance_metric, self.mcl_params
+                    )
+                )
+        
+    def _get_v_family(self, data, cdr3_col, v_gene_col):
+        data["v_family"] = data[v_gene_col].apply(
+            lambda x: x.split("-")[0].split("*")[0]
+            )
+        return data
+        
+        
+    def _vgene_clustering(self, data, cdr3_col, v_gene_col) -> ClusteringResult:
+        
+        data = self._get_v_family(data, cdr3_col, v_gene_col)
+        
+        result = pd.DataFrame()
+        c = 0
+        for vgene in data.v_family.unique():
+            
+            subset = data[data.v_family==vgene]
+            super_clusters = self._faiss(subset[cdr3_col])
+            
+            clusters = ClusteringResult(
+                MCL_multiprocessing_from_preclusters(
+                    subset[cdr3_col], super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                    )
+                                        ).clusters_df
+            
+            clusters.cluster += c
+            subset = subset.merge(clusters, left_on=cdr3_col, right_on="CDR3")
+            result = pd.concat([result,subset],axis=0)
+            c = result.cluster.max() + 1
+        
+        return ClusteringResult(
+            result[[cdr3_col, v_gene_col, "cluster"]].drop_duplicates()
+            )
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
@@ -253,7 +293,9 @@ class Clustering:
         for i in range(0, npreclusters, clusters_per_batch):
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
-            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus)
+            mcl_result = MCL_multiprocessing_from_preclusters(
+                None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus
+                )
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
             if calc_cluster_matrix:
@@ -282,18 +324,28 @@ class Clustering:
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
-    def fit(self, cdr3: pd.Series, alpha: pd.Series = None) -> ClusteringResult:
+    @timeit
+    def fit(self, data, include_vgene = True, cdr3_col = None, v_gene_col = None, alpha: pd.Series = None) -> ClusteringResult:
         """
         Function that calls the indicated clustering method and returns clusters in a ClusteringResult
         """
+        if include_vgene:
+            return self._vgene_clustering(data, cdr3_col, v_gene_col)
         if alpha is not None:
-            assert len(cdr3) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
-            cdr3 = cdr3.add(alpha)
+            assert len(data) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
+            data = data.add(alpha)
         if self.method == 'MCL':
-            return ClusteringResult(MCL(cdr3, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params))
+            print("Clustering using MCL approach.")
+            return ClusteringResult(
+                MCL(
+                    data, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params
+                    )
+                )
         elif self.method == 'FAISS':
-            return self._faiss(cdr3)
+            print("Clustering using faiss approach.")
+            return self._faiss(data)
         elif self.method == 'RANDOM':
-            return self._random(cdr3)
+            return self._random(data)
         else:
-            return self._twostep(cdr3)
+            print("Clustering %s TCRs using two-step approach." % (len(data)))
+            return self._twostep(data)
