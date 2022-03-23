@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 import markov_clustering as mcl
+import community
 import parmap
 import multiprocessing
 import time
@@ -47,7 +48,7 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
 
     try:
         G = nx.parse_adjlist(edgelist, nodetype=str)
-        m = nx.to_scipy_sparse_matrix(G)
+        m = nx.to_scipy_sparse_array(G)
     
         # Run MCL
         result = mcl.run_mcl(m, inflation=mcl_hyper[0], expansion=mcl_hyper[1])
@@ -75,6 +76,20 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
 
     return clusters
 
+
+def louvain(cdr3, edgelist=None, distance_metric='HAMMING'):
+    if edgelist is None:
+        edgelist = create_edgelist(cdr3, method=distance_metric)
+
+    try:
+        G = nx.parse_adjlist(edgelist, nodetype=str)
+        partition = community.best_partition(G)
+    except nx.NetworkXError:
+        partition = pd.DataFrame({"CDR3": [], "cluster": []})
+        
+    return pd.DataFrame.from_dict(
+        partition, orient="index", columns=["cluster"]
+        ).reset_index().rename(columns={'index': 'CDR3'})
 
 def MCL_multi(edgelist, cdr3, mcl_hyper=[1.2,2]):
     return MCL(cdr3, edgelist, mcl_hyper=mcl_hyper)
@@ -133,18 +148,67 @@ def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
             edges = create_edgelist(c, method=distance_metric)
             if initiate:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
-                nodelist = nodelist.append(nodes)
+                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
                 initiate = False
             else:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
                 nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
-                nodelist = nodelist.append(nodes)
+                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
         # If no edges can be found, leave cluster as is
         except nx.NetworkXError:
             try:
                 cluster = pd.DataFrame({"CDR3": c,
                                         "cluster": [nodelist["cluster"].max() + 1] * len(c)})
+                nodelist = pd.concat([nodelist,cluster],ignore_index=True)
+            except KeyError:
+                cluster = pd.DataFrame({"CDR3": c, "cluster": [0] * len(c)})
                 nodelist = nodelist.append(cluster)
+    return nodelist
+
+def louvain_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_cpus):
+    """
+    Pool multiple processes for parallelization using multiple cpus.
+    """
+    cluster_contents = preclust.cluster_contents()
+    edges = {i: create_edgelist(cluster, method=distance_metric) for i, cluster in enumerate(cluster_contents)}
+    # Clusters containing no edges with HD = 1 are isolated
+    clusters = clusters_without_hd1_edges(edges, cluster_contents)
+    remaining_edges = edges.values()
+    # Perform MCL on other clusters
+    with multiprocessing.Pool(n_cpus) as pool:
+        nodelist = parmap.map(louvain,
+                              remaining_edges,
+                              cdr3,
+                              pm_parallel=True,
+                              pm_pool=pool)
+        nodelist += clusters
+
+    # Fix cluster ids
+    for c in range(len(nodelist)):
+        if c != 0:
+            nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
+    return pd.concat(nodelist, ignore_index=True)
+
+def louvain_from_preclusters(cdr3, preclust, distance_metric):
+    initiate = True
+    nodelist = pd.DataFrame(columns=["CDR3", "cluster"])
+    for c in preclust.cluster_contents():
+        try:
+            edges = create_edgelist(c, method=distance_metric)
+            if initiate:
+                nodes = louvain(cdr3, edges)
+                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
+                initiate = False
+            else:
+                nodes = louvain(cdr3, edges)
+                nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
+        # If no edges can be found, leave cluster as is
+        except nx.NetworkXError:
+            try:
+                cluster = pd.DataFrame({"CDR3": c,
+                                        "cluster": [nodelist["cluster"].max() + 1] * len(c)})
+                nodelist = pd.concat([nodelist,cluster],ignore_index=True)
             except KeyError:
                 cluster = pd.DataFrame({"CDR3": c, "cluster": [0] * len(c)})
                 nodelist = nodelist.append(cluster)

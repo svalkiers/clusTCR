@@ -7,7 +7,7 @@ from shutil import rmtree
 import random
 import time
 
-from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
+from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters, louvain_multiprocessing_from_preclusters, louvain_from_preclusters
 from clustcr.modules.faiss_clustering import FaissClustering, properties
 from clustcr.analysis.features import FeatureGenerator
 from .metrics import Metrics
@@ -131,6 +131,7 @@ class Clustering:
         available = ["MCL",
                      "FAISS",
                      "TWO-STEP",
+                     "TWO-STEP-V2",
                      "RANDOM"]
         assert self.method in available, f"Method not available, please choose one of the following methods:\n {available}"
 
@@ -238,6 +239,23 @@ class Clustering:
             lambda x: x.split("-")[0].split("*")[0]
             )
         return data
+    
+    def _two_step_v2(self, cdr3):
+        
+        super_clusters = self._faiss(cdr3)
+        if self.n_cpus > 1:
+            return ClusteringResult(
+                louvain_multiprocessing_from_preclusters(
+                    cdr3, super_clusters, self.distance_metric, self.n_cpus
+                    )
+                )
+        else:
+            return ClusteringResult(
+                louvain_from_preclusters(
+                    cdr3, super_clusters, self.distance_metric
+                    )
+                )
+    
         
         
     def _vgene_clustering(self, data, cdr3_col, v_gene_col) -> ClusteringResult:
@@ -325,7 +343,7 @@ class Clustering:
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
     @timeit
-    def fit(self, data, include_vgene = True, cdr3_col = None, v_gene_col = None, alpha: pd.Series = None) -> ClusteringResult:
+    def fit(self, data, include_vgene = False, cdr3_col = None, v_gene_col = None, alpha: pd.Series = None) -> ClusteringResult:
         """
         Function that calls the indicated clustering method and returns clusters in a ClusteringResult
         """
@@ -346,6 +364,8 @@ class Clustering:
             return self._faiss(data)
         elif self.method == 'RANDOM':
             return self._random(data)
+        elif self.method == "TWO-STEP-V2":
+            return self._two_step_v2(data)
         else:
             print("Clustering %s TCRs using two-step approach." % (len(data)))
             return self._twostep(data)
