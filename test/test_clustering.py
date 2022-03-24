@@ -26,8 +26,8 @@ class ClusteringTest(TestBase):
 
     def test_alphabeta(self):
         df = datasets.vdjdb_paired()
-        alpha, cdr3 = df['CDR3_alpha'], df['CDR3_beta']
-        Clustering().fit(cdr3, alpha)
+        alpha, beta = df['CDR3_alpha'], df['CDR3_beta']
+        Clustering().fit(beta, alpha=alpha)
 
     def test_multiprocessing(self):
         for cpu in [-1, 0, 1, 2, 'all']:
