@@ -7,7 +7,6 @@
 # - Removed unused functions
 
 from scipy.stats import zscore
-from pyteomics.electrochem import pI
 from .atchley import ATCHLEY_FACTORS
 from .z_scores import Z_SCORES
 
@@ -41,9 +40,7 @@ elektrochem = {'basicity': znorm_scipy(basicity), 'hydrophobicity': znorm_scipy(
 
 
 def make_profile(sequence, prop='basicity'):
-    if prop == 'pI':
-        return [pI(x) for x in sequence]
-    elif 'atchley' in prop:
+    if 'atchley' in prop:
         # atchley1 for example gives the first factor
         index = int(prop[-1]) - 1
         return [ATCHLEY_FACTORS.get(x, [0, 0, 0, 0, 0])[index] for x in sequence]
