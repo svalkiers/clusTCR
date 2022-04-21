@@ -22,7 +22,7 @@ To plug in the epitope data, *clusTCR* expects a `pandas.Dataframe` containing `
 As an example, we have the epitope data for the `test_cdr3` dataset available.
 
 ```python
-epitopes = datasets.test_epitope()
+epitopes = datasets.test_epitopes()
 ```
 
 ### Metrics
