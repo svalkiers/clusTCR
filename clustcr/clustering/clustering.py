@@ -7,12 +7,13 @@ from shutil import rmtree
 import random
 import time
 
-from .mcl import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters
-from clustcr.modules.faiss_clustering import FaissClustering, properties
-from clustcr.analysis.features import FeatureGenerator
+from .methods import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters, louvain_multiprocessing_from_preclusters, louvain_from_preclusters
+from ..modules.faiss_clustering import FaissClustering, properties
+from ..analysis.features import FeatureGenerator
 from .metrics import Metrics
 from .multirepertoire_cluster_matrix import MultiRepertoireClusterMatrix
 from .tools import create_edgelist
+from ..exception import ClusTCRError
 
 def timeit(myfunc):
     # Decorator to keep track of time required to run a function
@@ -20,7 +21,7 @@ def timeit(myfunc):
         start = time.time()
         result = myfunc(*args, **kwargs)
         end = time.time()
-        print(f'Total time to run \'{myfunc.__name__}\': {(end-start):.3f}s')
+        print(f'Total time to run ClusTCR: {(end-start):.3f}s')
         return result
     return timed
 
@@ -87,7 +88,8 @@ class Clustering:
                  faiss_training_data=None,
                  max_sequence_size=None,
                  fitting_data_size=None,
-                 rnd_chunk_size=5000):
+                 rnd_chunk_size=5000,
+                 second_pass="MCL"):
 
         """
         Parameters
@@ -114,6 +116,7 @@ class Clustering:
         self.faiss_properties = properties.OPTIMAL
         self._set_n_cpus(n_cpus)
         self.rnd_chunk_size = rnd_chunk_size
+        self.second_pass = second_pass.upper()
 
         # For batch processing
         self.faiss_training_data = faiss_training_data
@@ -200,7 +203,6 @@ class Clustering:
 
         return ClusteringResult(pd.DataFrame(clusters))
 
-    @timeit
     def _twostep(self, cdr3) -> ClusteringResult:
         """
         Two-step clustering procedure for speeding up CDR3 clustering by
@@ -219,12 +221,116 @@ class Clustering:
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
-
+        # Multiprocessing
         super_clusters = self._faiss(cdr3)
         if self.n_cpus > 1:
-            return ClusteringResult(MCL_multiprocessing_from_preclusters(cdr3, super_clusters, self.distance_metric, self.mcl_params, self.n_cpus))
+            if self.second_pass == "MCL":            
+                return ClusteringResult(
+                    MCL_multiprocessing_from_preclusters(
+                        cdr3, super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                        )
+                    )
+            elif self.second_pass == "LOUVAIN":
+                return ClusteringResult(
+                    louvain_multiprocessing_from_preclusters(
+                        cdr3, super_clusters, self.distance_metric, self.n_cpus
+                        )
+                    )
+            else:
+                raise ClusTCRError(f"Unknown method: {self.second_pass}")
+        # No multiprocessing
         else:
-            return ClusteringResult(MCL_from_preclusters(cdr3, super_clusters, self.distance_metric, self.mcl_params))
+            if self.second_pass == "MCL":
+                return ClusteringResult(
+                    MCL_from_preclusters(
+                        cdr3, super_clusters, self.distance_metric, self.mcl_params
+                        )
+                    )
+            elif self.second_pass == "LOUVAIN":
+                return ClusteringResult(
+                    louvain_from_preclusters(
+                        cdr3, super_clusters, self.distance_metric
+                        )
+                    )
+            else:
+                raise ClusTCRError(f"Unknown method: {self.second_pass}")
+        
+    def _get_v_family(self, data: pd.DataFrame, v_gene_col : str):
+        """
+        Extract V gene family information from V gene column
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            The input data must contain at least these columns: CDR3 sequences
+            and V gene.
+        v_gene_col : str
+            The name of the column containing V gene information.
+
+        Returns
+        -------
+        data : pd.DataFrame
+            The input data with a new column that contains the V family information.
+
+        """
+        data["v_family"] = data[v_gene_col].apply(
+            lambda x: x.split("-")[0].split("*")[0]
+            )
+        return data
+        
+    def _vgene_clustering(self, 
+                          data: pd.DataFrame, 
+                          cdr3_col: str, 
+                          v_gene_col: str
+                          ) -> ClusteringResult:
+        """
+        Pre-sort TCRs based on V gene family and apply clustering on each
+        subset individually.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Input dataframe containing at least one column for the CDR3 sequence
+            and one column with V genes.
+        cdr3_col : str
+            Name of the CDR3 column.
+        v_gene_col : str
+            Name of the V gene column.
+
+        Returns
+        -------
+        ClusteringResult
+        """
+        
+        if v_gene_col == None:
+            raise ClusTCRError("No V gene column specified.")
+        
+        try:
+            data = self._get_v_family(data, v_gene_col)
+        except KeyError:
+            raise ClusTCRError(f"Unknown V gene column: {v_gene_col}")
+        
+        result = pd.DataFrame()
+        c = 0
+        for vgene in data.v_family.unique():
+            
+            subset = data[data.v_family==vgene]
+            super_clusters = self._faiss(subset[cdr3_col])
+            
+            clusters = ClusteringResult(
+                MCL_multiprocessing_from_preclusters(
+                    subset[cdr3_col], super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                    )
+                                        ).clusters_df
+            
+            clusters.cluster += c
+            subset = subset.merge(clusters, left_on=cdr3_col, right_on="CDR3")
+            result = pd.concat([result,subset],axis=0)
+            c = result.cluster.max() + 1
+        
+        return ClusteringResult(
+            result[[cdr3_col, v_gene_col, "cluster"]].drop_duplicates()
+            )
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
         assert self.faiss_clustering is not None, 'Batch precluster needs faiss_training_data and fitting_data_size'
@@ -253,7 +359,9 @@ class Clustering:
         for i in range(0, npreclusters, clusters_per_batch):
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
-            mcl_result = MCL_multiprocessing_from_preclusters(None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus)
+            mcl_result = MCL_multiprocessing_from_preclusters(
+                None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus
+                )
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
             if calc_cluster_matrix:
@@ -282,18 +390,39 @@ class Clustering:
     def batch_cleanup(self):
         rmtree(Clustering.BATCH_TMP_DIRECTORY)
 
-    def fit(self, cdr3: pd.Series, alpha: pd.Series = None) -> ClusteringResult:
+    @timeit
+    def fit(self, 
+            data, 
+            include_vgene = False, 
+            cdr3_col: str = None, 
+            v_gene_col: str = None, 
+            alpha: pd.Series = None
+            ) -> ClusteringResult:
         """
         Function that calls the indicated clustering method and returns clusters in a ClusteringResult
         """
-        if alpha is not None:
-            assert len(cdr3) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
-            cdr3 = cdr3.add(alpha)
-        if self.method == 'MCL':
-            return ClusteringResult(MCL(cdr3, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params))
-        elif self.method == 'FAISS':
-            return self._faiss(cdr3)
-        elif self.method == 'RANDOM':
-            return self._random(cdr3)
+        if include_vgene:
+            return self._vgene_clustering(data, cdr3_col, v_gene_col)
         else:
-            return self._twostep(cdr3)
+            try:
+                data = pd.Series(data)
+            except ValueError:
+                raise ClusTCRError("Wrong input. Please provide an iterable object containing CDR3 amino acid sequences.")
+        if alpha is not None:
+            assert len(data) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
+            data = data.add(alpha)
+        if self.method == 'MCL':
+            print("Clustering using MCL approach.")
+            return ClusteringResult(
+                MCL(
+                    data, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params
+                    )
+                )
+        elif self.method == 'FAISS':
+            print("Clustering using faiss approach.")
+            return self._faiss(data)
+        elif self.method == 'RANDOM':
+            return self._random(data)
+        else:
+            print("Clustering %s TCRs using two-step approach." % (len(data)))
+            return self._twostep(data)

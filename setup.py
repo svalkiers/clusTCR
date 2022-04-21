@@ -11,7 +11,7 @@ requirements = [
     'pyteomics',
     'parmap',
     'python-levenshtein'
-    # 'tcrdist3'
+    'tcrdist3'
 ]
 
 setup(
