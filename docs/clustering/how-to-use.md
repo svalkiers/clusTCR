@@ -48,6 +48,31 @@ cdr3, alpha = data['CDR3_beta'], data['CDR3_alpha']
 output = clustering.fit(cdr3, alpha=alpha)
 ```
 
+ #### [BETA] Including V gene information
+
+In addition to CDR3-based clustering, ClusTCR provides the ability to include V gene information into the clustering process. When V gene clustering is enables, TCR sequences will first be sorted by V gene family, and clustering will be applied within each group of sequences that belong to that V gene family. By doing so, clustering accuracy will be increased at the cost of clustering retention (i.e. less sequences will end up in a cluster).
+
+You can include V gene information into the clustering process by setting the `include_vgene = True`  in the `.fit()` method. In addition, this process requires the user to specify the names of the columns containing the CDR3 and V gene information. Below, you can find an example of how this works in practice:
+
+```python
+import pandas as pd
+from clustcr import Clustering, datasets
+
+# Import a file that contains at least a CDR3 column and a V gene column
+data = pd.read_csv("mytcrfile.csv")
+# Initiate a Clustering object
+clustering = Clustering()
+# Include V gene information by setting the include_vgene parameter to True
+output = clustering.fit(
+    data,
+    include_vgene = True, # Enable V gene clustering
+    cdr3_col = "cdr3", # Specificy CDR3 column name
+    v_gene_col = "vgene" # Specificy V gene column name
+	)
+```
+
+
+
 ### ClusteringResult
 
 #### Dataframe
