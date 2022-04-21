@@ -278,7 +278,29 @@ class Clustering:
             )
         return data
         
-    def _vgene_clustering(self, data, cdr3_col, v_gene_col) -> ClusteringResult:
+    def _vgene_clustering(self, 
+                          data: pd.DataFrame, 
+                          cdr3_col: str, 
+                          v_gene_col: str
+                          ) -> ClusteringResult:
+        """
+        Pre-sort TCRs based on V gene family and apply clustering on each
+        subset individually.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Input dataframe containing at least one column for the CDR3 sequence
+            and one column with V genes.
+        cdr3_col : str
+            Name of the CDR3 column.
+        v_gene_col : str
+            Name of the V gene column.
+
+        Returns
+        -------
+        ClusteringResult
+        """
         
         if v_gene_col == None:
             raise ClusTCRError("No V gene column specified.")
@@ -381,6 +403,11 @@ class Clustering:
         """
         if include_vgene:
             return self._vgene_clustering(data, cdr3_col, v_gene_col)
+        else:
+            try:
+                data = pd.Series(data)
+            except ValueError:
+                raise ClusTCRError("Wrong input. Please provide an iterable object containing CDR3 amino acid sequences.")
         if alpha is not None:
             assert len(data) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
             data = data.add(alpha)

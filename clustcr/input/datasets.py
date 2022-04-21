@@ -95,6 +95,11 @@ def vdjdb_beta(q=0, epitopes=False):
     else:
         return beta["CDR3"].drop_duplicates()
     
+def vdjdb(q=0):
+    df = parse_vdjdb(vdjdb_location,q=q)
+    return df[["cdr3.beta", "v.beta", "antigen.epitope"]].dropna().drop_duplicates()
+    
+    
 def vdjdb_paired(q=0, epitopes=False):
     vdjdb = parse_vdjdb(vdjdb_location, q=q)
     paired = vdjdb[['cdr3.alpha', 'cdr3.beta', 'antigen.epitope']].dropna().drop_duplicates()
