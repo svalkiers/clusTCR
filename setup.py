@@ -9,6 +9,7 @@ requirements = [
     'scikit-learn',
     'markov_clustering',
     'parmap',
+    'python-louvain'
 #    'tcrdist3'
 ]
 
