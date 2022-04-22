@@ -9,7 +9,9 @@ requirements = [
     'scikit-learn',
     'markov_clustering',
     'parmap',
-    'tcrdist3'
+    'python-louvain',
+    'matplotlib'
+#    'tcrdist3'
 ]
 
 setup(
