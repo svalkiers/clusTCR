@@ -9,7 +9,7 @@ requirements = [
     'scikit-learn',
     'markov_clustering',
     'parmap',
-    'tcrdist3'
+#    'tcrdist3'
 ]
 
 setup(
