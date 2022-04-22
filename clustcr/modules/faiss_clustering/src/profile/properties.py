@@ -1,7 +1,6 @@
 """ The chemical properties that can be used for the clustering """
 from itertools import chain, combinations
 
-
 def powerset(s):
     """ Powerset without the empty tuple """
     pset = chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
