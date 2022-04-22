@@ -10,7 +10,6 @@ requirements = [
     'markov_clustering',
     'pyteomics',
     'parmap',
-    'python-levenshtein'
     'tcrdist3'
 ]
 
