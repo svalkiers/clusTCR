@@ -8,7 +8,6 @@ requirements = [
     'networkx',
     'scikit-learn',
     'markov_clustering',
-    'pyteomics',
     'parmap',
     'tcrdist3'
 ]

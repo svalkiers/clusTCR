@@ -80,7 +80,6 @@ class Clustering:
 
     def __init__(self,
                  method='two-step',
-                 distance_metric='hamming',
                  n_cpus: Union[str, int] = 1,
                  use_gpu=False,
                  faiss_cluster_size=5000,
@@ -110,7 +109,6 @@ class Clustering:
         """
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
         self.method = method.upper()
-        self.distance_metric = distance_metric.upper()
         self.use_gpu = use_gpu
         self.faiss_cluster_size = faiss_cluster_size
         self.faiss_properties = properties.OPTIMAL
@@ -227,13 +225,13 @@ class Clustering:
             if self.second_pass == "MCL":            
                 return ClusteringResult(
                     MCL_multiprocessing_from_preclusters(
-                        cdr3, super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                        cdr3, super_clusters, self.mcl_params, self.n_cpus
                         )
                     )
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
                     louvain_multiprocessing_from_preclusters(
-                        cdr3, super_clusters, self.distance_metric, self.n_cpus
+                        cdr3, super_clusters, self.n_cpus
                         )
                     )
             else:
@@ -243,13 +241,13 @@ class Clustering:
             if self.second_pass == "MCL":
                 return ClusteringResult(
                     MCL_from_preclusters(
-                        cdr3, super_clusters, self.distance_metric, self.mcl_params
+                        cdr3, super_clusters, self.mcl_params
                         )
                     )
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
                     louvain_from_preclusters(
-                        cdr3, super_clusters, self.distance_metric
+                        cdr3, super_clusters
                         )
                     )
             else:
@@ -319,7 +317,7 @@ class Clustering:
             
             clusters = ClusteringResult(
                 MCL_multiprocessing_from_preclusters(
-                    subset[cdr3_col], super_clusters, self.distance_metric, self.mcl_params, self.n_cpus
+                    subset[cdr3_col], super_clusters, self.mcl_params, self.n_cpus
                     )
                                         ).clusters_df
             
@@ -360,7 +358,7 @@ class Clustering:
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
             mcl_result = MCL_multiprocessing_from_preclusters(
-                None, preclusters, self.distance_metric, self.mcl_params, self.n_cpus
+                None, preclusters, self.mcl_params, self.n_cpus
                 )
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
@@ -415,7 +413,7 @@ class Clustering:
             print("Clustering using MCL approach.")
             return ClusteringResult(
                 MCL(
-                    data, distance_metric=self.distance_metric, mcl_hyper=self.mcl_params
+                    data, mcl_hyper=self.mcl_params
                     )
                 )
         elif self.method == 'FAISS':

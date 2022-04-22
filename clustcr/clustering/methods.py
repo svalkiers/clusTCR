@@ -18,7 +18,7 @@ def timeit(myfunc):
     return timed
 
 
-def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outfile=None):
+def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     """
     Perform clustering on a network of CDR3 amino acid sequences with
     a known hamming distance, using the Markov clustering (MCL) algorithm.
@@ -44,7 +44,7 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
         contains the corresponding cluster ids.
     """
     if edgelist is None:
-        edgelist = create_edgelist(cdr3, method=distance_metric)
+        edgelist = create_edgelist(cdr3)
 
     try:
         G = nx.parse_adjlist(edgelist, nodetype=str)
@@ -77,9 +77,9 @@ def MCL(cdr3, edgelist=None, distance_metric='HAMMING', mcl_hyper=[1.2, 2], outf
     return clusters
 
 
-def louvain(cdr3, edgelist=None, distance_metric='HAMMING'):
+def louvain(cdr3, edgelist=None):
     if edgelist is None:
-        edgelist = create_edgelist(cdr3, method=distance_metric)
+        edgelist = create_edgelist(cdr3)
 
     try:
         G = nx.parse_adjlist(edgelist, nodetype=str)
@@ -115,12 +115,12 @@ def clusters_without_hd1_edges(edges, cluster_contents):
         del edges[id]
     return clusters
 
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper, n_cpus):
+def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
     cluster_contents = preclust.cluster_contents()
-    edges = {i: create_edgelist(cluster, method=distance_metric) for i, cluster in enumerate(cluster_contents)}
+    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
     clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
@@ -140,12 +140,12 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, mcl_hy
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
+def MCL_from_preclusters(cdr3, preclust, mcl_hyper):
     initiate = True
     nodelist = pd.DataFrame(columns=["CDR3", "cluster"])
     for c in preclust.cluster_contents():
         try:
-            edges = create_edgelist(c, method=distance_metric)
+            edges = create_edgelist(c)
             if initiate:
                 nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
                 nodelist = pd.concat([nodelist,nodes],ignore_index=True)
@@ -165,12 +165,12 @@ def MCL_from_preclusters(cdr3, preclust, distance_metric, mcl_hyper):
                 nodelist = nodelist.append(cluster)
     return nodelist
 
-def louvain_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_cpus):
+def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
     cluster_contents = preclust.cluster_contents()
-    edges = {i: create_edgelist(cluster, method=distance_metric) for i, cluster in enumerate(cluster_contents)}
+    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
     clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
@@ -189,12 +189,12 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, distance_metric, n_
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-def louvain_from_preclusters(cdr3, preclust, distance_metric):
+def louvain_from_preclusters(cdr3, preclust):
     initiate = True
     nodelist = pd.DataFrame(columns=["CDR3", "cluster"])
     for c in preclust.cluster_contents():
         try:
-            edges = create_edgelist(c, method=distance_metric)
+            edges = create_edgelist(c)
             if initiate:
                 nodes = louvain(cdr3, edges)
                 nodelist = pd.concat([nodelist,nodes],ignore_index=True)
