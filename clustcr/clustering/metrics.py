@@ -103,7 +103,7 @@ class Metrics:
             row = mat[col].idxmax()
 
             if (len(mat.index) > 1 and len(mat.columns) > 1):
-                high = high + rec_max(mat.drop(row, 0).drop(col, 1))
+                high = high + rec_max(mat.drop(row, axis=0).drop(col, axis=1))
 
             return high
 
