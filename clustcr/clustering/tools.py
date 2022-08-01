@@ -1,4 +1,4 @@
-from itertools import combinations
+import time
 
 def create_edgelist(cdr3, filename=None):
     '''
@@ -33,3 +33,13 @@ def create_edgelist(cdr3, filename=None):
                 f.write('%s\n' % edge)
 
     return edgelist
+    
+def timeit(myfunc):
+    # Decorator to keep track of time required to run a function
+    def timed(*args, **kwargs):
+        start = time.time()
+        result = myfunc(*args, **kwargs)
+        end = time.time()
+        print(f'Total time to run ClusTCR: {(end-start):.3f}s')
+        return result
+    return timed

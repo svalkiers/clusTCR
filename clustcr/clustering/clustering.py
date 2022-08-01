@@ -5,25 +5,14 @@ from os.path import join, exists
 from os import mkdir, getcwd
 from shutil import rmtree
 import random
-import time
 
 from .methods import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters, louvain_multiprocessing_from_preclusters, louvain_from_preclusters
 from ..modules.faiss_clustering import FaissClustering, properties
 from ..analysis.features import FeatureGenerator
 from .metrics import Metrics
 from .multirepertoire_cluster_matrix import MultiRepertoireClusterMatrix
-from .tools import create_edgelist
+from .tools import create_edgelist, timeit
 from ..exception import ClusTCRError
-
-def timeit(myfunc):
-    # Decorator to keep track of time required to run a function
-    def timed(*args, **kwargs):
-        start = time.time()
-        result = myfunc(*args, **kwargs)
-        end = time.time()
-        print(f'Total time to run ClusTCR: {(end-start):.3f}s')
-        return result
-    return timed
 
 class ClusteringResult:
     def __init__(self, nodelist):
