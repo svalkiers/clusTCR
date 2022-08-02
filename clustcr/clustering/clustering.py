@@ -11,31 +11,31 @@ from ..modules.faiss_clustering import FaissClustering, properties
 from ..analysis.features import FeatureGenerator
 from .metrics import Metrics
 from .multirepertoire_cluster_matrix import MultiRepertoireClusterMatrix
-from .tools import create_edgelist, timeit
+from .tools import create_edgelist, create_edgelist_vgene, timeit
 from ..exception import ClusTCRError
 
 class ClusteringResult:
     def __init__(self, nodelist):
         self.clusters_df = nodelist
+        if "v_call" in self.clusters_df:
+            self.edges = create_edgelist_vgene(self.clusters_df)
+        else:
+            self.edges = create_edgelist(self.clusters_df.junction_aa)
 
     def summary(self, motif_cutoff=.7):
         motifs = FeatureGenerator(self.clusters_df).clustermotif(cutoff=motif_cutoff)
         sizes = self.clusters_df.cluster.value_counts().sort_index()
         summ = pd.DataFrame({"size":sizes.values,"motif":motifs.values()})
-        # summ = self.clusters_df.cluster.value_counts().to_frame()
-        # summ.rename(columns={'cluster': 'size'}, inplace=True)
-        # summ = summ.rename_axis('cluster_idx').reset_index()
-        # summ['motif'] = motifs.values()
         return summ
 
     def write_to_csv(self, path=join(getcwd(), 'clusTCR_clusters.csv')):
         return self.clusters_df.to_csv(path, index=False)
-
+    
     def export_network(self, filename='clusTCR_network.txt'):
-        return create_edgelist(self.clusters_df.CDR3, filename)
+        return create_edgelist(self.clusters_df.junction_aa, filename)
 
     def cluster_contents(self):
-        return list(self.clusters_df.groupby(['cluster'])['CDR3'].apply(list))
+        return list(self.clusters_df.groupby(['cluster'])['junction_aa'].apply(list))
 
     def compute_features(self, compute_pgen=True):
         return FeatureGenerator(self.clusters_df).get_features(compute_pgen=compute_pgen)
@@ -141,10 +141,10 @@ class Clustering:
         sequences = list(cdr3)
         random.shuffle(sequences)
         chunks = [sequences[i::n] for i in range(n)]
-        clusters = {"CDR3": [], "cluster": []}
+        clusters = {"junction_aa": [], "cluster": []}
         for i, chunk in enumerate(chunks):
             for seq in chunk:
-                clusters["CDR3"].append(seq)
+                clusters["junction_aa"].append(seq)
                 clusters["cluster"].append(i)
         return ClusteringResult(pd.DataFrame(clusters))
 
@@ -167,7 +167,7 @@ class Clustering:
         Returns
         -------
         clusters : pd.DataFrame
-            pd.DataFrame containing two columns: 'CDR3' and 'cluster'.
+            pd.DataFrame containing two columns: 'junction_aa' and 'cluster'.
             The first column contains CDR3 sequences, the second column
             contains the corresponding cluster ids.
         """
@@ -183,9 +183,9 @@ class Clustering:
         else:
             result = clustering.cluster(cdr3)
 
-        clusters = {"CDR3": [], "cluster": []}
+        clusters = {"junction_aa": [], "cluster": []}
         for i, cluster in enumerate(result):
-            clusters["CDR3"].append(cdr3[i])
+            clusters["junction_aa"].append(cdr3[i])
             clusters["cluster"].append(int(cluster))
 
         return ClusteringResult(pd.DataFrame(clusters))
@@ -296,27 +296,34 @@ class Clustering:
             data = self._get_v_family(data, v_gene_col)
         except KeyError:
             raise ClusTCRError(f"Unknown V gene column: {v_gene_col}")
+            
+        remap = {
+            cdr3_col:"junction_aa",
+            v_gene_col:"v_call"
+            }
+        
+        data = data.rename(columns=remap)
         
         result = pd.DataFrame()
         c = 0
         for vgene in data.v_family.unique():
             
             subset = data[data.v_family==vgene]
-            super_clusters = self._faiss(subset[cdr3_col])
+            super_clusters = self._faiss(subset["junction_aa"])
             
             clusters = ClusteringResult(
                 MCL_multiprocessing_from_preclusters(
-                    subset[cdr3_col], super_clusters, self.mcl_params, self.n_cpus
+                    subset["junction_aa"], super_clusters, self.mcl_params, self.n_cpus
                     )
                                         ).clusters_df
             
             clusters.cluster += c
-            subset = subset.merge(clusters, left_on=cdr3_col, right_on="CDR3")
+            subset = subset.merge(clusters, left_on="junction_aa", right_on="junction_aa")
             result = pd.concat([result,subset],axis=0)
             c = result.cluster.max() + 1
         
         return ClusteringResult(
-            result[[cdr3_col, v_gene_col, "cluster"]].drop_duplicates()
+            result[["junction_aa", "v_call", "cluster"]].drop_duplicates()
             )
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
@@ -356,7 +363,7 @@ class Clustering:
             yield ClusteringResult(mcl_result)
 
     def _batch_process_preclusters(self, cluster_ids):
-        preclusters = {'CDR3': [], 'cluster': [], 'name': []}
+        preclusters = {'junction_aa': [], 'cluster': [], 'name': []}
         for cluster_id in cluster_ids:
             filename = join(Clustering.BATCH_TMP_DIRECTORY, str(cluster_id))
             if not exists(filename):
@@ -366,7 +373,7 @@ class Clustering:
                 content = [e.replace('\n', '').split(',') for e in content]
                 sequences = list(map(lambda x: x[0], content))
                 names = list(map(lambda x: x[1], content))
-                preclusters['CDR3'].extend(sequences)
+                preclusters['junction_aa'].extend(sequences)
                 preclusters['cluster'].extend([cluster_id] * len(sequences))
                 preclusters['name'].extend(names)
         return ClusteringResult(pd.DataFrame(preclusters))

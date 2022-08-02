@@ -21,19 +21,15 @@ def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
         df = df[df['frame_type'] == 'In']
         df = df[['amino_acid', 'v_gene', 'productive_frequency']]
         df = df[df['v_gene'] != 'unresolved']
-        df.rename(columns={'amino_acid': 'CDR3',
-                           'v_gene': 'V',
-                           'productive_frequency': 'count'},
-                  inplace=True)
+        df = df.rename(columns={'amino_acid': 'junction_aa',
+                                'v_gene': 'v_call'})
 
     if sample_type == 'v2':
         df = df[df['sequenceStatus'] == 'In']
         df = df[['aminoAcid', 'vGeneName', 'frequencyCount (%)']]
         df = df[df['vGeneName'] != 'unresolved']
-        df.rename(columns={'aminoAcid': 'CDR3',
-                           'vGeneName': 'V',
-                           'frequencyCount (%)': 'count'},
-                  inplace=True)
+        df.rename(columns={'aminoAcid': 'junction_aa',
+                           'vGeneName': 'v_call'})
 
     # Convert Adaptive to IMGT nomenclature
     df['V'] = df['V'].apply(lambda x: adaptive_to_imgt_human.get(x))
@@ -45,8 +41,8 @@ def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
     df['count'] = df['count'] / 100
     
     if out_format.upper() == 'CDR3':
-        return pd.Series(df.CDR3.unique())
+        return pd.Series(df.junction_aa.unique())
     elif out_format.upper() == 'GLIPH2':
         return df
     elif out_format.upper() == 'TCRDIST':
-        return df.rename(columns={'CDR3': 'cdr3_b_aa', 'V': 'v_b_gene'})
+        return df.rename(columns={'junction_aa': 'cdr3_b_aa', 'v_call': 'v_b_gene'})
