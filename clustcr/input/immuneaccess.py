@@ -32,9 +32,9 @@ def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
                            'vGeneName': 'v_call'})
 
     # Convert Adaptive to IMGT nomenclature
-    df['V'] = df['V'].apply(lambda x: adaptive_to_imgt_human.get(x))
+    df['v_call'] = df['v_call'].apply(lambda x: adaptive_to_imgt_human.get(x))
     v_db = imgt_v_genes()
-    df = df[df['V'].isin(v_db)]
+    df = df[df['v_call'].isin(v_db)]
 
     df.drop_duplicates(inplace=True)
     df['subject'] = [filename.split('/')[-1].replace('.tsv', '')] * len(df)

@@ -82,7 +82,7 @@ def vdjdb_alpha(q=0, epitopes=False):
     if epitopes:
         return alpha
     else:
-        return alpha["CDR3"].drop_duplicates()
+        return alpha["junction_aa"].drop_duplicates()
 
 def vdjdb_beta(q=0, epitopes=False):
     vdjdb = parse_vdjdb(vdjdb_location, q=q)
