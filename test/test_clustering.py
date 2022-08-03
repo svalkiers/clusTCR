@@ -5,8 +5,8 @@ from clustcr import datasets, Clustering
 class ClusteringTest(TestBase):
 
     def setUp(self):
-        self.cdr3 = datasets.test_cdr3()
-        self.epitopes = datasets.test_epitopes()
+        self.cdr3 = datasets.test_cdr3()["junction_aa"]
+        self.epitopes = datasets.test_epitopes()[["junction_aa", "epitope"]]
 
     def test_normal(self):
         Clustering().fit(self.cdr3)
@@ -41,33 +41,33 @@ class ClusteringTest(TestBase):
 
     def test_batch_clustering(self):
         vdj = datasets.vdjdb_beta()
-        max_sequence_size = vdj.str.len().max()
+        max_sequence_size = vdj.junction_aa.str.len().max()
         train = vdj.sample(2000)
         times = 3
         size_per_time = 3000
-        clustering = Clustering(faiss_training_data=train,
+        clustering = Clustering(faiss_training_data=train.junction_aa,
                                 fitting_data_size=times * size_per_time,
                                 max_sequence_size=max_sequence_size)
         for i in range(times):
             sample = vdj.sample(size_per_time)
-            clustering.batch_precluster(sample)
+            clustering.batch_precluster(sample.junction_aa)
         for clusters in clustering.batch_cluster():
             df = clusters.clusters_df
         clustering.batch_cleanup()
 
     def test_batch_clustering_multiprocessing(self):
         vdj = datasets.vdjdb_beta()
-        max_sequence_size = vdj.str.len().max()
+        max_sequence_size = vdj.junction_aa.str.len().max()
         train = vdj.sample(2000)
         times = 3
         size_per_time = 3000
-        clustering = Clustering(faiss_training_data=train,
+        clustering = Clustering(faiss_training_data=train.junction_aa,
                                 fitting_data_size=times * size_per_time,
                                 max_sequence_size=max_sequence_size,
                                 n_cpus='all')
         for i in range(times):
             sample = vdj.sample(size_per_time)
-            clustering.batch_precluster(sample)
+            clustering.batch_precluster(sample.junction_aa)
         for clusters in clustering.batch_cluster():
             df = clusters.clusters_df
         clustering.batch_cleanup()
@@ -78,12 +78,12 @@ class ClusteringTest(TestBase):
         train = vdj.sample(2000)
         times = 3
         size_per_time = 3000
-        clustering = Clustering(faiss_training_data=train,
+        clustering = Clustering(faiss_training_data=train.junction_aa,
                                 fitting_data_size=times * size_per_time,
                                 max_sequence_size=max_sequence_size)
         for i in range(times):
             sample = vdj.sample(size_per_time)
-            clustering.batch_precluster(sample, name=f'time {i}')
+            clustering.batch_precluster(sample.junction_aa, name=f'time {i}')
         for clusters in clustering.batch_cluster(calc_cluster_matrix=True):
             df = clusters.clusters_df
         clustering.batch_cluster_matrix()

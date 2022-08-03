@@ -5,8 +5,8 @@ from clustcr import datasets, Clustering, ClusterAnalysis, ModelTraining
 class ClusteringTest(TestBase):
 
     def setUp(self):
-        self.cdr3 = datasets.test_cdr3()
-        self.epitopes = datasets.test_epitopes()
+        self.cdr3 = datasets.test_cdr3().junction_aa
+        self.epitopes = datasets.test_epitopes()[["junction_aa", "epitope"]]
         self.clustering_result = Clustering().fit(self.cdr3)
 
     def make_features(self):
