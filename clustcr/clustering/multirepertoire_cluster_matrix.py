@@ -13,14 +13,14 @@ class MultiRepertoireClusterMatrix:
     def add(self, preclusters, clusters):
         name_dict = self._make_name_dict(preclusters)
         for index, row in clusters.iterrows():
-            cdr3, cluster = row['CDR3'], row['cluster']
+            cdr3, cluster = row['junction_aa'], row['cluster']
             for name in name_dict.get(cdr3, []):
                 self._add_to_feature_dict(name, cluster)
 
     def _make_name_dict(self, preclusters):
         name_dict = {}
         for index, row in preclusters.clusters_df.iterrows():
-            cdr3, name = row['CDR3'], row['name']
+            cdr3, name = row['junction_aa'], row['name']
             if cdr3 not in name_dict:
                 name_dict[cdr3] = set()
             name_dict[cdr3].add(name)

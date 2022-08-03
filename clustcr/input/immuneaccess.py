@@ -38,7 +38,7 @@ def parse_immuneaccess(filename, out_format='CDR3', separator='\t'):
 
     df.drop_duplicates(inplace=True)
     df['subject'] = [filename.split('/')[-1].replace('.tsv', '')] * len(df)
-    df['count'] = df['count'] / 100
+    # df['count'] = df['count'] / 100
     
     if out_format.upper() == 'CDR3':
         return pd.Series(df.junction_aa.unique())
