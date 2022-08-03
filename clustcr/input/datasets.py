@@ -75,29 +75,32 @@ def metarepertoire(directory, data_format, out_format='CDR3', n_sequences=10**6)
 
 def vdjdb_alpha(q=0, epitopes=False):
     vdjdb = parse_vdjdb(vdjdb_location, q=q)
-    alpha = vdjdb[['cdr3.alpha', 'antigen.epitope']].dropna().drop_duplicates()
-    alpha.rename(columns={'cdr3.alpha':'CDR3',
-                          'antigen.epitope':'Epitope'},
-                 inplace=True)
+    alpha = vdjdb[['cdr3.alpha', 'v.beta', 'antigen.epitope']].dropna().drop_duplicates()
+    alpha = alpha.rename(columns={'cdr3.alpha':'junction_aa',
+                                  'v.beta':'v_call',
+                                  'antigen.epitope':'epitope'})
     if epitopes:
         return alpha
     else:
-        return alpha["CDR3"].drop_duplicates()
+        return alpha["junction_aa"].drop_duplicates()
 
 def vdjdb_beta(q=0, epitopes=False):
     vdjdb = parse_vdjdb(vdjdb_location, q=q)
-    beta = vdjdb[['cdr3.beta', 'antigen.epitope']].dropna().drop_duplicates()
-    beta.rename(columns={'cdr3.beta':'CDR3',
-                         'antigen.epitope':'Epitope'},
-                inplace=True)
+    beta = vdjdb[['cdr3.beta', 'v.beta', 'antigen.epitope']].dropna().drop_duplicates()
+    beta = beta.rename(columns={'cdr3.beta':'junction_aa',
+                                'v.beta':'v_call',
+                                'antigen.epitope':'epitope'})
     if epitopes:
-        return beta
+        return beta.reset_index(drop=True)
     else:
-        return beta["CDR3"].drop_duplicates()
+        return beta[["junction_aa", "v_call"]].drop_duplicates().reset_index(drop=True)
     
 def vdjdb(q=0):
     df = parse_vdjdb(vdjdb_location,q=q)
-    return df[["cdr3.beta", "v.beta", "antigen.epitope"]].dropna().drop_duplicates()
+    df = df.rename(columns={'cdr3.beta':'junction_aa',
+                            'v.beta':'v_call',
+                            'antigen.epitope':'epitope'})
+    return df[["junction_aa", "v_call", "epitope"]].dropna().drop_duplicates()
     
     
 def vdjdb_paired(q=0, epitopes=False):

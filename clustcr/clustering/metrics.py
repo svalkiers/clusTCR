@@ -13,11 +13,11 @@ class Metrics:
         self.epidata = epidata  # 'ground truth', pd.DataFrame of CDR3 sequences with corresponding epitope specificity (columns=["CDR3", "Epitope"])
 
         # Ensure all values correspond to CDR3s in nodelist and no duplicates remain
-        self.gt = self.epidata[self.epidata["CDR3"].isin(self.nodelist["CDR3"])]
+        self.gt = self.epidata[self.epidata["junction_aa"].isin(self.nodelist["junction_aa"])]
         self.gt = self.gt.drop_duplicates()
 
         # Construct joint pd.DataFrame that stores information about cluster and epitope association of CDR3s
-        self.gt = pd.merge(left=self.epidata, right=self.nodelist, on="CDR3")
+        self.gt = pd.merge(left=self.epidata, right=self.nodelist, on="junction_aa")
 
         # Make a copy and permute cluster assignment column, this provides a baseline for comparison
         self.gt_baseline = self.gt.copy()
@@ -32,13 +32,13 @@ class Metrics:
         self.gt["count"] = 1
         self.gt_baseline["count"] = 1
         conf_mat_t = pd.pivot_table(self.gt, values='count',
-                                    index=self.gt["Epitope"],
+                                    index=self.gt["epitope"],
                                     columns=self.gt["cluster"],
                                     aggfunc=np.sum,
                                     fill_value=0)
         conf_mat_b = pd.pivot_table(self.gt_baseline,
                                     values='count',
-                                    index=self.gt_baseline["Epitope"],
+                                    index=self.gt_baseline["epitope"],
                                     columns=self.gt_baseline["cluster"],
                                     aggfunc=np.sum,
                                     fill_value=0)
@@ -49,7 +49,7 @@ class Metrics:
         '''
         Cluster retention is the fraction of sequences that has been assigned to any cluster.
         '''
-        return len(self.nodelist.CDR3.unique()) / len(self.epidata.CDR3.unique())
+        return len(self.nodelist.junction_aa.unique()) / len(self.epidata.junction_aa.unique())
 
     def purity(self, conf_mat=None):
         '''
