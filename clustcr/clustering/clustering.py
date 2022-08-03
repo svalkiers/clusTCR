@@ -332,7 +332,7 @@ class Clustering:
         for index, row in clustered.clusters_df.iterrows():
             filename = join(Clustering.BATCH_TMP_DIRECTORY, str(row['cluster']))
             with open(filename, 'a') as f:
-                f.write(f'{row["CDR3"]},{name}\n')
+                f.write(f'{row["junction_aa"]},{name}\n')
 
     def batch_cluster(self, calc_cluster_matrix=False):
         """

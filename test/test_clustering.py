@@ -74,7 +74,7 @@ class ClusteringTest(TestBase):
 
     def test_matrix(self):
         vdj = datasets.vdjdb_beta()
-        max_sequence_size = vdj.str.len().max()
+        max_sequence_size = vdj.junction_aa.str.len().max()
         train = vdj.sample(2000)
         times = 3
         size_per_time = 3000
