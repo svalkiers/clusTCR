@@ -9,13 +9,13 @@ parent: Help
 
 ### Is clusTCR available for Windows users?
 
-clusTCR relies upon the Faiss library, which is officially only supported for OSX and Linux. Windows users may install a [WSL](https://ubuntu.com/wsl) in order to properly run clusTCR.
+ClusTCR relies upon the Faiss library, which is officially only supported for OSX and Linux. Windows users may install a [WSL](https://ubuntu.com/wsl) in order to properly run ClusTCR.
 
 
 
 ### I wanna use the *clustcr-gpu* version, but I don't know if my device has the correct hardware requirements. Is there a way to check this?
 
-*clustcr-gpu* relies on the [Faiss library](https://github.com/facebookresearch/faiss), which on its turn relies on the cudatoolkit.Only specific GPUs with CUDA-compatibility can be used for clusTCR's GPU function. First, you will need to find out which graphics hardware is available in your device. Depending on your OS, you will need to do one of the following things:
+*clustcr-gpu* relies on the [Faiss library](https://github.com/facebookresearch/faiss), which on its turn relies on the cudatoolkit.Only specific GPUs with CUDA-compatibility can be used for ClusTCR's GPU function. First, you will need to find out which graphics hardware is available in your device. Depending on your OS, you will need to do one of the following things:
 
 #### > Linux
 
@@ -39,7 +39,7 @@ Now that you have identified the type of GPU in your device, you need to check i
 
 ### Multiprocessing gives me RuntimeErrors. How can I solve this issue?
 
-Some users have reported *RuntimeErrors* when running clusTCR on multiple CPUs. While we are looking into this issue, there is a temporary solution to the problem. Inserting a `if __name__ == '__main__':` will prevent the creation of subprocesses recursively, thereby avoiding potential *RuntimeErrors*. Here is a practical example of how you would use this when working with clusTCR:
+Some users have reported *RuntimeErrors* when running clusTCR on multiple CPUs. While we are looking into this issue, there is a temporary solution to the problem. Inserting a `if __name__ == '__main__':` will prevent the creation of subprocesses recursively, thereby avoiding potential *RuntimeErrors*. Here is a practical example of how you would use this when working with ClusTCR:
 
 ```python
 from clustcr import datasets, Clustering
