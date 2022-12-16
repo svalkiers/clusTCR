@@ -110,7 +110,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
     cluster_contents = preclust.cluster_contents()
     edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
-    clusters = clusters_without_hd1_edges(edges, cluster_contents)
+    # clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
@@ -120,7 +120,7 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
                               mcl_hyper=mcl_hyper,
                               pm_parallel=True,
                               pm_pool=pool)
-        nodelist += clusters
+        # nodelist += clusters
 
     # Fix cluster ids
     for c in range(len(nodelist)):
