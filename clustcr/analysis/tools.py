@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+from collections import Counter
 
 from clustcr.chem_properties import AALPHABET
-from clustcr.clustering.metrics import Metrics
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
@@ -16,41 +16,31 @@ def profile_matrix(sequences : list):
     NOTE: this version does not take into account the expected frequency of each amino acid at each position.
     '''
 
-    # Amino acid alphabet
-    alphabet = AALPHABET
-
     # Make sure to proceed only if all sequences in the cluster have equal length
-    if all(len(seq) == len(sequences[0]) for seq in sequences) is False:
+    seq_len = len(sequences[0])
+    if not all(len(seq) == seq_len for seq in sequences):
 
         # On the rare occasion that a cluster contains sequences of inequal length.
         # Typically, there is/are only one (or very few) sequence(s) that differ from the avg. CDR3 length in the cluster.
         # Therefore, we use the length of the highest proportion of sequences as the standard, and delete all others.
-        s = []
-        for i in sequences:
-            s.append(len(i))
-        k = pd.Series(s).value_counts().index[0] # Standard cluster length
-        todel = []
-        for j in sequences:
-            if len(j) != k:
-                todel.append(j) # Delete all sequences that differ from k in length.
-        sequences = [seq for seq in sequences if seq not in todel]
-
+        seq_len = Counter([len(s) for s in sequences]).most_common()[0][0]
+        sequences = [s for s in sequences if len(s) == seq_len]
+    
     # Initiate profile matrix with zeros
-    profile = {}
-    for aa in alphabet:
-        profile[aa] = [0] * len(sequences[0])
+    pm = np.zeros(shape=(len(AALPHABET), seq_len))
 
-    # Fill in profile matrix
-    for pos in range(len(sequences[0])):
-        psc = pd.Series([seq[pos] for seq in sequences]).value_counts()
-        for i in psc.index:
-            profile[i][pos] = np.round(psc.loc[i] / len(sequences),2)
+    # initiate AA dict:
+    AAs = {aa: i for i, aa in enumerate(AALPHABET)}
 
-    # Generate output as a pd.DataFrame
-    colnames = ["p" + str(p) for p in range(len(sequences[0]))]
-    profile = pd.DataFrame(profile,index=colnames).T # indices will be columns, because the df is transposed
+    # Fill in profile matrix with counts
+    for s in sequences:
+        for i, aa in enumerate(s):
+            pm[AAs[aa], i] += 1
 
-    return profile
+    # normalize profile matrix to percentages
+    pm = pm / len(sequences)
+
+    return pm
 
 
 def motif_from_profile(profile, method, cutoff=.7):
@@ -59,26 +49,29 @@ def motif_from_profile(profile, method, cutoff=.7):
     Square brackets [...] indicate multiple aa possibilities at that position.
     X represents any aa.
     '''
+    AA_map = {i:aa for i,aa in enumerate(AALPHABET)}
 
     consensus = ''
     
     if method.lower() == 'standard':
-        for col in profile.columns:
-            if profile[col].max() > cutoff:
-                consensus += profile[col].idxmax()
-            elif sum(profile[col].nlargest(2)) >= cutoff:
-                if profile[col].nlargest(2)[0] >= 2 * profile[col].nlargest(2)[1]:
-                    consensus += profile[col].idxmax().lower()
+        top_idxs = np.argpartition(profile, -2, axis=0)[-2:].T
+        top_values = np.partition(profile, -2, axis=0)[-2:].T
+        for (second_max_idx, max_idx), (second_max_value, max_value) in zip(top_idxs, top_values):
+            if max_value >= cutoff:
+                consensus += AA_map[max_idx]
+            elif max_value + second_max_value >= cutoff:
+                if max_value >= 2*second_max_value:
+                    consensus += AA_map[max_idx].lower()
                 else:
-                    char = "[" + ''.join(profile[col].nlargest(2).index) + "]"
-                    consensus += char
+                    consensus += f"[{AA_map[max_idx]}{AA_map[second_max_idx]}]"
             else:
                 consensus += "."
                 
     elif method.lower() == 'conservative':
-        for col in profile.columns:
-            if profile[col].max() > cutoff:
-                consensus += profile[col].idxmax()
+        max_idx, max_value = np.argmax(profile.T, axis=1), np.amax(profile.T, axis=1)
+        for idx, value in zip(max_idx, max_value):
+            if value > cutoff:
+                consensus += AA_map[idx]
             else:
                 consensus += "."
 
