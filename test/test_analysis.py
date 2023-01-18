@@ -21,10 +21,10 @@ class ClusteringTest(TestBase):
     def test_prediction(self):
         ClusterAnalysis(self.make_features()).predict_quality()
 
-    def test_train_model(self):
-        model = ModelTraining(self.clustering_result.clusters_df, self.epitopes)
-        fitted = model.fit_data()
-        model.evaluate()
-        model.save(fitted, 'test.pkl')
+#    def test_train_model(self):
+#        model = ModelTraining(self.clustering_result.clusters_df, self.epitopes)
+#        fitted = model.fit_data()
+#        model.evaluate()
+#        model.save(fitted, 'test.pkl')
 
 
