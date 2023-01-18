@@ -7,7 +7,7 @@ from clustcr.chem_properties import AALPHABET
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import auc, plot_roc_curve
+from sklearn.metrics import auc, roc_curve
 
 
 def profile_matrix(sequences : list):
