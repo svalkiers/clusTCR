@@ -132,9 +132,16 @@ def stratified_cross_validation(model, X, y, n_folds = 10):
     fig, ax = plt.subplots(figsize=(14,11))
     for i, (train, test) in enumerate(cv.split(X, y)):
         model.fit(X[train], y[train])
-        viz = plot_roc_curve(model, X[test], y[test],
-                             name="", alpha=0, lw=3, ax=ax, color="royalblue")
-        interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+        y_pred = model.predict(X[test])
+        fpr, tpr, thresholds = roc_curve(
+            y_true = y[test],
+            y_score = y_pred,
+            pos_label = 1
+            )
+#        viz = plot_roc_curve(model, X[test], y[test],
+#                             name="", alpha=0, lw=3, ax=ax, color="royalblue")
+        ax.plot(x = fpr, y = tpr, alpha=0, lw=3, color="royalblue")
+        interp_tpr = np.interp(mean_fpr, fpr, tpr)
         interp_tpr[0] = 0.0
         tprs.append(interp_tpr)
         aucs.append(viz.roc_auc)
