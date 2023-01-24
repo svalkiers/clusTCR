@@ -10,7 +10,8 @@ requirements = [
     'markov_clustering',
     'parmap',
     'python-louvain',
-    'matplotlib'
+    'matplotlib',
+    'scipy==1.8'
 #    'tcrdist3'
 ]
 
