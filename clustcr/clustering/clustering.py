@@ -6,16 +6,18 @@ from os import mkdir, getcwd
 from shutil import rmtree
 import random
 
-from .methods import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters, louvain_multiprocessing_from_preclusters, louvain_from_preclusters
+from .methods import MCL, MCL_from_preclusters, MCL_multiprocessing_from_preclusters, MCL_multiprocessing_from_preclusters_test, louvain_multiprocessing_from_preclusters, louvain_from_preclusters
 from ..modules.faiss_clustering import FaissClustering, properties
 from ..analysis.features import FeatureGenerator
+from ..analysis.tools import format_chain
 from .metrics import Metrics
 from .multirepertoire_cluster_matrix import MultiRepertoireClusterMatrix
 from .tools import create_edgelist, create_edgelist_vgene, timeit
 from ..exception import ClusTCRError
 
 class ClusteringResult:
-    def __init__(self, nodelist):
+    def __init__(self, nodelist, chain='B'):
+        self.chain = chain
         self.clusters_df = nodelist
         if "v_call" in self.clusters_df:
             self.edges = create_edgelist_vgene(self.clusters_df)
@@ -38,7 +40,10 @@ class ClusteringResult:
         return list(self.clusters_df.groupby(['cluster'])['junction_aa'].apply(list))
 
     def compute_features(self, compute_pgen=True):
-        return FeatureGenerator(self.clusters_df).get_features(compute_pgen=compute_pgen)
+        return FeatureGenerator(self.clusters_df).get_features(
+            chain=self.chain,
+            compute_pgen=compute_pgen
+            )
 
     def metrics(self, epi):
         return Metrics(self.clusters_df, epi)
@@ -68,6 +73,7 @@ class Clustering:
     BATCH_TMP_DIRECTORY = 'clustcr_batch_tmp' + str(random.randint(0, 10 ** 8))
 
     def __init__(self,
+                 chain='B',
                  method='two-step',
                  n_cpus: Union[str, int] = 1,
                  use_gpu=False,
@@ -96,6 +102,7 @@ class Clustering:
         faiss_cluster_size : TYPE, optional
             DESCRIPTION. The default is 5000.
         """
+        self.chain = format_chain(chain)
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
         self.method = method.upper()
         self.use_gpu = use_gpu
@@ -146,7 +153,7 @@ class Clustering:
             for seq in chunk:
                 clusters["junction_aa"].append(seq)
                 clusters["cluster"].append(i)
-        return ClusteringResult(pd.DataFrame(clusters))
+        return ClusteringResult(pd.DataFrame(clusters), chain=self.chain)
 
     def _train_faiss(self, cdr3: pd.Series, get_profiles=False):
         clustering = FaissClustering(avg_cluster_size=self.faiss_cluster_size,
@@ -188,7 +195,7 @@ class Clustering:
             clusters["junction_aa"].append(cdr3[i])
             clusters["cluster"].append(int(cluster))
 
-        return ClusteringResult(pd.DataFrame(clusters))
+        return ClusteringResult(pd.DataFrame(clusters), chain=self.chain)
 
     def _twostep(self, cdr3) -> ClusteringResult:
         """
@@ -215,7 +222,8 @@ class Clustering:
                 return ClusteringResult(
                     MCL_multiprocessing_from_preclusters(
                         cdr3, super_clusters, self.mcl_params, self.n_cpus
-                        )
+                        ),
+                    chain=self.chain
                     )
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
@@ -231,13 +239,15 @@ class Clustering:
                 return ClusteringResult(
                     MCL_from_preclusters(
                         cdr3, super_clusters, self.mcl_params
-                        )
+                        ),
+                    chain=self.chain
                     )
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
                     louvain_from_preclusters(
                         cdr3, super_clusters
-                        )
+                        ),
+                    chain=self.chain
                     )
             else:
                 raise ClusTCRError(f"Unknown method: {self.second_pass}")
@@ -288,42 +298,39 @@ class Clustering:
         -------
         ClusteringResult
         """
-        
+        # Requirements
         if v_gene_col == None:
             raise ClusTCRError("No V gene column specified.")
-        
         try:
             data = self._get_v_family(data, v_gene_col)
         except KeyError:
             raise ClusTCRError(f"Unknown V gene column: {v_gene_col}")
-            
+        # Map TCR columns to AIRR standard notation 
         remap = {
             cdr3_col:"junction_aa",
             v_gene_col:"v_call"
             }
-        
         data = data.rename(columns=remap)
-        
+        # Run workflow for every V family
         result = pd.DataFrame()
         c = 0
         for vgene in data.v_family.unique():
-            
+            # Pre-clustering
             subset = data[data.v_family==vgene]
             super_clusters = self._faiss(subset["junction_aa"])
-            
+            # Second clustering step
             clusters = ClusteringResult(
                 MCL_multiprocessing_from_preclusters(
                     subset["junction_aa"], super_clusters, self.mcl_params, self.n_cpus
-                    )
+                    ), chain=self.chain
                                         ).clusters_df
-            
-            clusters.cluster += c
+            clusters.cluster += c # adjust cluster identifiers to ensure they stay unique
             subset = subset.merge(clusters, left_on="junction_aa", right_on="junction_aa")
             result = pd.concat([result,subset],axis=0)
             c = result.cluster.max() + 1
-        
         return ClusteringResult(
-            result[["junction_aa", "v_call", "cluster"]].drop_duplicates()
+            result[["junction_aa", "v_call", "cluster"]].drop_duplicates(),
+            chain=self.chain
             )
 
     def batch_precluster(self, cdr3: pd.Series, name=''):
@@ -360,7 +367,7 @@ class Clustering:
             max_cluster_id = mcl_result['cluster'].max()
             if calc_cluster_matrix:
                 self.cluster_matrix.add(preclusters, mcl_result)
-            yield ClusteringResult(mcl_result)
+            yield ClusteringResult(mcl_result,chain=self.chain)
 
     def _batch_process_preclusters(self, cluster_ids):
         preclusters = {'junction_aa': [], 'cluster': [], 'name': []}
@@ -376,7 +383,7 @@ class Clustering:
                 preclusters['junction_aa'].extend(sequences)
                 preclusters['cluster'].extend([cluster_id] * len(sequences))
                 preclusters['name'].extend(names)
-        return ClusteringResult(pd.DataFrame(preclusters))
+        return ClusteringResult(pd.DataFrame(preclusters),chain=self.chain)
 
     def batch_cluster_matrix(self):
         return self.cluster_matrix.get_matrix()
@@ -410,7 +417,7 @@ class Clustering:
             return ClusteringResult(
                 MCL(
                     data, mcl_hyper=self.mcl_params
-                    )
+                    ), chain=self.chain
                 )
         elif self.method == 'FAISS':
             print("Clustering using faiss approach.")
