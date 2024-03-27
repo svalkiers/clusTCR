@@ -128,6 +128,31 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
+def MCL_multiprocessing_from_preclusters_test(cdr3, preclust, mcl_hyper, n_cpus):
+    """
+    Pool multiple processes for parallelization using multiple cpus.
+    """
+    cluster_contents = preclust.cluster_contents()
+    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
+    # Clusters containing no edges with HD = 1 are isolated
+    clusters = clusters_without_hd1_edges(edges, cluster_contents)
+    remaining_edges = edges.values()
+    # Perform MCL on other clusters
+    with multiprocessing.Pool(n_cpus) as pool:
+        nodelist = parmap.map(MCL_multi,
+                              remaining_edges,
+                              cdr3,
+                              mcl_hyper=mcl_hyper,
+                              pm_parallel=True,
+                              pm_pool=pool)
+        nodelist += clusters
+
+    # Fix cluster ids
+    for c in range(len(nodelist)):
+        if c != 0:
+            nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
+    return pd.concat(nodelist, ignore_index=True)
+
 def MCL_from_preclusters(cdr3, preclust, mcl_hyper):
     initiate = True
     nodelist = pd.DataFrame(columns=["junction_aa", "cluster"])

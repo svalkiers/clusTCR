@@ -2,12 +2,16 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 from collections import Counter
+from os import path
 
 from clustcr.chem_properties import AALPHABET
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import auc, roc_curve
+
+from ..modules.olga import load_model as load_model
+from ..modules.olga import generation_probability as pgen
 
 
 def profile_matrix(sequences : list):
@@ -163,3 +167,53 @@ def stratified_cross_validation(model, X, y, n_folds = 10):
                     label=r'$\pm$ 1 std. dev.')
 
     return fig, ax
+
+def get_olga_model(chain='B'):
+        '''
+        Load Pgen model for alpha or beta chain.
+        '''
+        # Format chain to select correct OLGA models
+        chain_map = {'A':'alpha','B':'beta'}
+        # OLGA files
+        DIR = '/'.join(path.dirname(path.abspath(__file__)).split('/')[:-1]) + '/'
+        params_file_name = path.join(DIR,f'modules/olga/default_models/human_T_{chain_map[chain]}/model_params.txt')
+        marginals_file_name = path.join(DIR,f'modules/olga/default_models/human_T_{chain_map[chain]}/model_marginals.txt')
+        V_anchor_pos_file = path.join(DIR,f'modules/olga/default_models/human_T_{chain_map[chain]}/V_gene_CDR3_anchors.csv')
+        J_anchor_pos_file = path.join(DIR,f'modules/olga/default_models/human_T_{chain_map[chain]}/J_gene_CDR3_anchors.csv')
+        # Load models
+        if chain == 'A':
+                genomic_data = load_model.GenomicDataVJ()
+                generative_model = load_model.GenerativeModelVJ()
+        else:
+                genomic_data = load_model.GenomicDataVDJ()
+                generative_model = load_model.GenerativeModelVDJ()
+        genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
+        generative_model.load_and_process_igor_model(marginals_file_name)
+        # Return correct Pgen model
+        if chain == 'A':
+                return pgen.GenerationProbabilityVJ(generative_model, genomic_data)
+        else:
+                return pgen.GenerationProbabilityVDJ(generative_model, genomic_data)
+
+def format_chain(chain):
+    '''
+    Correctly format the input TCR chain.
+    '''
+    mapping = {
+        'b':'B',
+        'beta':'B',
+        'trb':'B',
+        'trbeta':'B',
+        'tcrb':'B',
+        'tcrbeta':'B',
+        'tcr_beta':'B',
+        'a':'A',
+        'alpha':'A',
+        'tra':'A',
+        'tralpha':'A',
+        'tcra':'A',
+        'tcralpha':'A',
+        'tcr_alpha':'A',
+        }
+    assert chain.lower() in mapping, f"Unknown chain: {chain}. Please select A, B or AB."
+    return mapping[chain.lower()]

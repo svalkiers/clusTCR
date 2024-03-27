@@ -76,6 +76,24 @@ def create_edgelist_vgene(clusters, filename=None):
     #             f.write('%s\n' % edge)
 
     return edges
+
+def create_edgelist_tcrdist(df, r=12.5):
+    
+    from ..modules.snetcr.neighbors import neighbor_retrieval
+    
+    neighbors = neighbor_retrieval(query=df, d=r)
+    edges = []
+    for tcr in nbrs:
+        for n in nbrs[tcr][3]:
+            if "_".join(tcr) != n:
+                edges.append(("_".join(tcr), n))
+    nodes = list(set([i[0] for i in edges] + [i[1] for i in edges]))
+    
+    G = nx.Graph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    
+    return G
     
 def timeit(myfunc):
     # Decorator to keep track of time required to run a function

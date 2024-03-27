@@ -2,10 +2,7 @@ import numpy as np
 import pandas as pd
 
 from clustcr.chem_properties import PHYSCHEM
-from ..modules.olga import load_model as load_model
-from ..modules.olga import generation_probability as pgen
-from .tools import profile_matrix, motif_from_profile
-from os import path
+from .tools import profile_matrix, motif_from_profile, format_chain, get_olga_model
 
 class FeatureGenerator:
     """
@@ -117,34 +114,20 @@ class FeatureGenerator:
     
     
     
-    def _calc_pgen(self):
+    def _calc_pgen(self, chain='B'):
         """
         Calculate the average generation probability of a cluster.
-        PGEN calculations are based on the OLGA module.
+        Pgen calculations are based on the OLGA module.
         """
-        
-        DIR = '/'.join(path.dirname(path.abspath(__file__)).split('/')[:-1]) + '/'
-                
-        params_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_params.txt')
-        marginals_file_name = path.join(DIR,'modules/olga/default_models/human_T_beta/model_marginals.txt')
-        V_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/V_gene_CDR3_anchors.csv')
-        J_anchor_pos_file = path.join(DIR,'modules/olga/default_models/human_T_beta/J_gene_CDR3_anchors.csv')
-        
-        genomic_data = load_model.GenomicDataVDJ()
-        genomic_data.load_igor_genomic_data(params_file_name, V_anchor_pos_file, J_anchor_pos_file)
-        
-        generative_model = load_model.GenerativeModelVDJ()
-        generative_model.load_and_process_igor_model(marginals_file_name)
-        
-        pgen_model = pgen.GenerationProbabilityVDJ(generative_model, genomic_data)
-        
+        # Select alpha or beta Pgen model
+        pgen_model = get_olga_model(chain=chain)
+        # Compute Pgen
         p = [pgen_model.compute_aa_CDR3_pgen(seq) for seq in self.nodes["junction_aa"]]
+        # Format results
         self.nodes["pgen"] = p
-        
         pgenvals = pd.concat([self.nodes.groupby("cluster")["pgen"].mean().rename("pgen_avg"),
                               self.nodes.groupby("cluster")["pgen"].var().rename("pgen_var")],
                              axis=1)
-        
         return pgenvals
         
         
@@ -157,16 +140,17 @@ class FeatureGenerator:
     
 
 
-    def get_features(self, compute_pgen=True):
+    def get_features(self, chain='B', compute_pgen=True):
         """
         Compute feature matrix. Calculating pgen values can be time consuming.
         Therefore, the user has the option to skip this step, by turning the
         compute_pgen parameter to False.
         """
+        chain = format_chain(chain)
         aavar = self._calc_variation()
         pchem = self._calc_physchem()
         if compute_pgen:
-            pgen = self._calc_pgen()
+            pgen = self._calc_pgen(chain=chain)
             return self._combine(aavar, pchem, pgen)
         else:
             return self._combine(aavar, pchem)
