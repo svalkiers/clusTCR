@@ -66,7 +66,7 @@ def MCL(cdr3=None, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     return clusters
 
 
-def louvain(cdr3, edgelist=None):
+def louvain(cdr3=None, edgelist=None):
     if edgelist is None:
         edgelist = create_edgelist(cdr3)
 
@@ -182,7 +182,7 @@ def MCL_from_preclusters(preclust, mcl_hyper):
             nodelist = pd.concat([nodelist,nodes],ignore_index=True)
     return nodelist
 
-def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
+def louvain_multiprocessing_from_preclusters(preclust, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
     """
@@ -192,6 +192,7 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     clean_edges = clean_edgelist(edges)
     remaining_edges = clean_edges.values()
     # Perform MCL on other clusters
+    cdr3 = None
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(louvain,
                               remaining_edges,
@@ -204,7 +205,7 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-def louvain_from_preclusters(cdr3, preclust):
+def louvain_from_preclusters(preclust):
     '''
     Second pass using Louvain clustering, without multiprocessing.
     '''
@@ -213,11 +214,11 @@ def louvain_from_preclusters(cdr3, preclust):
     for c in preclust.cluster_contents():
         edges = create_edgelist(c)
         if initiate:
-            nodes = louvain(cdr3, edges)
+            nodes = louvain(edgelist=edges)
             nodelist = pd.concat([nodelist,nodes],ignore_index=True)
             initiate = False
         else:
-            nodes = louvain(cdr3, edges)
+            nodes = louvain(edgelist=edges)
             nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
             nodelist = pd.concat([nodelist,nodes],ignore_index=True)
     return nodelist
