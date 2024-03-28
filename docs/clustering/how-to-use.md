@@ -20,6 +20,7 @@ Any parameters should be passed to the `Clustering` object at creation, the foll
 
 | parameter | explanation | default |
 |:-------------|:------------------|:------|
+| chain | *A* or *B*<br />Specify alpha (*A*) or beta (*B*) chain. This choice does not influence the clustering process, but the information will be used during the downstream cluster analysis. Default = *B*. |  |
 | method |  *mcl*, *faiss* or *two-step*. <br> We recommend using *mcl* for data sets containing < 50,000 CDR3 sequences, and *two-step* for all data sets with > 50,000 sequences. For more information check out the [methods page](methods). | two-step  |
 | n_cpus | Number of CPUs used in the MCL clustering. This drastically increases the speed of *clusTCR*. When set to 'all', all of your CPUs will be used. | 1  |
 | use_gpu | Usage of GPU in the Faiss Clustering training step (needs clustcr-gpu to be installed) | False |

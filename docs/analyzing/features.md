@@ -28,6 +28,8 @@ Clusters can be represented by a feature matrix that describes several propertie
 | pgen_avg              | Average generation probability of CDR3 sequences in the cluster. Generation probability is calculated using the *olga* module. |
 | pgen_var              | Variance in generation probability within the cluster.       |
 
+**Note:** if you want to compute the generation probability for the TCR alpha chain, user must specify the `chain='A'` parameter in the `Clustering` object.
+
 These features can be calculated by calling the `compute_features()` function on a `ClusteringResult` object (see [clustering section](../clustering/how-to-use)). The code block below shows a brief example of a workflow for calculating cluster features.
 
 ```python
@@ -37,7 +39,7 @@ from clustcr import datasets, Clustering
 data = datasets.test_cdr3()
 
 # Perform clustering
-clustering = Clustering()
+clustering = Clustering(chain='B') # change to chain='A' for alpha chain
 output = clustering.fit(data)
 
 # Compute features of ClusteringResult object
