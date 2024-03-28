@@ -9,7 +9,7 @@ dependencies:
   - pip:
       - pandas
       - networkx
-      - scikit-learn=1.0.2
+      - scikit-learn==1.0.2
       - markov_clustering
       - pyteomics
       - tcrdist3
