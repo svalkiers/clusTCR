@@ -88,19 +88,39 @@ class Clustering:
         """
         Parameters
         ----------
-        cdr3 : pd.Series
-            Input data consisting of a list of CDR3 amino acid sequences.
+        chain : str
+            TCR chain. Choose between 'A' (alpha) or 'B' (beta).
+            The chain choice does not influence the clustering process, 
+            but it will be used for downstream cluster analysis. The default is 'B'.
         method : str
             Clustering method. The default is two-step.
         n_cpus : int, optional
             Number of GPUs to use for clustering. -1 to use all GPUs.
-            The default is -1.
+            The default is 1.
         use_gpu : bool, optional
             Enable GPU computing for FAISS clustering. The default is False.
         mcl_params : list, optional
             Hyperparameters of MCL. The default is [1.2,2].
-        faiss_cluster_size : TYPE, optional
-            DESCRIPTION. The default is 5000.
+        faiss_cluster_size : int, optional
+            Size of the pre-clusters. Increasing this number may result in
+            improved clustering accuracy but a decrease in computational performance. 
+            The default is 5000.
+        faiss_training_data : pd.Series
+            Batch clustering feature. Fit a subset of the data to train
+            the faiss index. This will initialize the centroids for K-means clustering.
+            During the subsequent steps, sequences will be assigned to one of the centroids.
+            Default is None.
+        fitting_data_size : int
+            Batch clustering feature. Total size of the data set that will be clustered
+            in batched. Default is None.
+        max_sequence_size : int
+            Batch clustering feature. Length of the longest CDR3 sequence in the data.
+            Default is None.
+        second_pass : str
+            Method used during the second clustering step. Choose between MCL and LOUVAIN.
+            Default is MCL.
+        rnd_chunk_size : int
+            Benchmarking feature (can be ignored).
         """
         self.chain = format_chain(chain)
         self.mcl_params = mcl_params if mcl_params is not None else [1.2, 2]
