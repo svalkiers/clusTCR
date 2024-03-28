@@ -248,7 +248,7 @@ class Clustering:
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
                     louvain_multiprocessing_from_preclusters(
-                        cdr3, super_clusters, self.n_cpus
+                        super_clusters, self.n_cpus
                         )
                     )
             else:
@@ -258,14 +258,14 @@ class Clustering:
             if self.second_pass == "MCL":
                 return ClusteringResult(
                     MCL_from_preclusters(
-                        cdr3, super_clusters, self.mcl_params
+                        preclust=super_clusters, mcl_hyper=self.mcl_params
                         ),
                     chain=self.chain
                     )
             elif self.second_pass == "LOUVAIN":
                 return ClusteringResult(
                     louvain_from_preclusters(
-                        cdr3, super_clusters
+                        super_clusters
                         ),
                     chain=self.chain
                     )
@@ -430,13 +430,13 @@ class Clustering:
             except ValueError:
                 raise ClusTCRError("Wrong input. Please provide an iterable object containing CDR3 amino acid sequences.")
         if alpha is not None:
-            assert len(data) == len(alpha), 'amount of CDR3 data is not equal to amount of alpha chain data'
+            assert len(data) == len(alpha), 'amount of beta chains is not equal to amount of alpha chains'
             data = data.add(alpha)
         if self.method == 'MCL':
             print("Clustering using MCL approach.")
             return ClusteringResult(
                 MCL(
-                    data, mcl_hyper=self.mcl_params
+                    cdr3=data, mcl_hyper=self.mcl_params
                     ), chain=self.chain
                 )
         elif self.method == 'FAISS':
