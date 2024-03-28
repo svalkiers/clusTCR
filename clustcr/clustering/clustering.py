@@ -241,7 +241,7 @@ class Clustering:
             if self.second_pass == "MCL":            
                 return ClusteringResult(
                     MCL_multiprocessing_from_preclusters(
-                        cdr3, super_clusters, self.mcl_params, self.n_cpus
+                        super_clusters, self.mcl_params, self.n_cpus
                         ),
                     chain=self.chain
                     )

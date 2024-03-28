@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python=3.8
   - pip
-  - faiss-gpu
+  - faiss-gpu=1.7.2
   - pip:
       - pandas
       - networkx

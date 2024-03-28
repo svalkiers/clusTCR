@@ -6,7 +6,7 @@ import parmap
 import multiprocessing
 from clustcr.clustering.tools import create_edgelist
 
-def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
+def MCL(cdr3=None, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
     """
     Perform clustering on a network of CDR3 amino acid sequences with
     a known hamming distance, using the Markov clustering (MCL) algorithm.
@@ -32,6 +32,7 @@ def MCL(cdr3, edgelist=None, mcl_hyper=[1.2, 2], outfile=None):
         contains the corresponding cluster ids.
     """
     if edgelist is None:
+        assert cdr3 is not None, 'No sequences or edges provided.'
         edgelist = create_edgelist(cdr3)
 
     try:
@@ -79,7 +80,7 @@ def louvain(cdr3, edgelist=None):
         partition, orient="index", columns=["cluster"]
         ).reset_index().rename(columns={'index': 'junction_aa'})
 
-def MCL_multi(edgelist, cdr3, mcl_hyper=[1.2,2]):
+def MCL_multi(edgelist=None, cdr3=None, mcl_hyper=[1.2,2]):
     return MCL(cdr3, edgelist, mcl_hyper=mcl_hyper)
 
 
@@ -103,15 +104,50 @@ def clusters_without_hd1_edges(edges, cluster_contents):
         del edges[id]
     return clusters
 
-def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
+def clean_edgelist(edges):
+    ids_to_be_removed = []
+    for i, edge_list in edges.items():
+        if len(edge_list) != 0:
+            continue
+        ids_to_be_removed.append(i)
+    clean_edges = {i:edges[i] for i in edges.keys() if i not in ids_to_be_removed}
+    return clean_edges
+
+def MCL_multiprocessing_from_preclusters(preclust, mcl_hyper, n_cpus):
     """
     Pool multiple processes for parallelization using multiple cpus.
+    """
+    cluster_contents = preclust.cluster_contents()
+    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
+    # Clusters containing no edges with HD = 1 are removed
+    clean_edges = clean_edgelist(edges)
+    remaining_edges = clean_edges.values()
+    # Perform MCL on other clusters
+    cdr3 = None
+    with multiprocessing.Pool(n_cpus) as pool:
+        nodelist = parmap.map(MCL_multi,
+                              remaining_edges,
+                              cdr3,
+                              mcl_hyper=mcl_hyper,
+                              pm_parallel=True,
+                              pm_pool=pool)
+
+    # Fix cluster ids
+    for c in range(len(nodelist)):
+        if c != 0:
+            nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
+    return pd.concat(nodelist, ignore_index=True)
+
+def MCL_multiprocessing_from_preclusters_test(preclust, mcl_hyper, n_cpus):
+    """
+    BUGFIXING, DON'T USE
     """
     cluster_contents = preclust.cluster_contents()
     edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
     # clusters = clusters_without_hd1_edges(edges, cluster_contents)
     remaining_edges = edges.values()
+    cdr3 = None
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(MCL_multi,
@@ -128,54 +164,22 @@ def MCL_multiprocessing_from_preclusters(cdr3, preclust, mcl_hyper, n_cpus):
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
     return pd.concat(nodelist, ignore_index=True)
 
-def MCL_multiprocessing_from_preclusters_test(cdr3, preclust, mcl_hyper, n_cpus):
-    """
-    Pool multiple processes for parallelization using multiple cpus.
-    """
-    cluster_contents = preclust.cluster_contents()
-    edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
-    # Clusters containing no edges with HD = 1 are isolated
-    clusters = clusters_without_hd1_edges(edges, cluster_contents)
-    remaining_edges = edges.values()
-    # Perform MCL on other clusters
-    with multiprocessing.Pool(n_cpus) as pool:
-        nodelist = parmap.map(MCL_multi,
-                              remaining_edges,
-                              cdr3,
-                              mcl_hyper=mcl_hyper,
-                              pm_parallel=True,
-                              pm_pool=pool)
-        nodelist += clusters
-
-    # Fix cluster ids
-    for c in range(len(nodelist)):
-        if c != 0:
-            nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
-    return pd.concat(nodelist, ignore_index=True)
-
-def MCL_from_preclusters(cdr3, preclust, mcl_hyper):
+def MCL_from_preclusters(preclust, mcl_hyper):
+    '''
+    Second pass using MCL, without multiprocessing.
+    '''
     initiate = True
     nodelist = pd.DataFrame(columns=["junction_aa", "cluster"])
     for c in preclust.cluster_contents():
-        try:
-            edges = create_edgelist(c)
-            if initiate:
-                nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
-                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
-                initiate = False
-            else:
-                nodes = MCL(cdr3, edges, mcl_hyper=mcl_hyper)
-                nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
-                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
-        # If no edges can be found, leave cluster as is
-        except nx.NetworkXError:
-            try:
-                cluster = pd.DataFrame({"junction_aa": c,
-                                        "cluster": [nodelist["cluster"].max() + 1] * len(c)})
-                nodelist = pd.concat([nodelist,cluster],ignore_index=True)
-            except KeyError:
-                cluster = pd.DataFrame({"junction_aa": c, "cluster": [0] * len(c)})
-                nodelist = nodelist.append(cluster)
+        edges = create_edgelist(c)
+        if initiate:
+            nodes = MCL(edgelist=edges, mcl_hyper=mcl_hyper)
+            nodelist = pd.concat([nodelist,nodes],ignore_index=True)
+            initiate = False
+        else:
+            nodes = MCL(edgelist=edges, mcl_hyper=mcl_hyper)
+            nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+            nodelist = pd.concat([nodelist,nodes],ignore_index=True)
     return nodelist
 
 def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
@@ -185,8 +189,8 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     cluster_contents = preclust.cluster_contents()
     edges = {i: create_edgelist(cluster) for i, cluster in enumerate(cluster_contents)}
     # Clusters containing no edges with HD = 1 are isolated
-    clusters = clusters_without_hd1_edges(edges, cluster_contents)
-    remaining_edges = edges.values()
+    clean_edges = clean_edgelist(edges)
+    remaining_edges = clean_edges.values()
     # Perform MCL on other clusters
     with multiprocessing.Pool(n_cpus) as pool:
         nodelist = parmap.map(louvain,
@@ -194,8 +198,6 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
                               cdr3,
                               pm_parallel=True,
                               pm_pool=pool)
-        nodelist += clusters
-
     # Fix cluster ids
     for c in range(len(nodelist)):
         if c != 0:
@@ -203,26 +205,19 @@ def louvain_multiprocessing_from_preclusters(cdr3, preclust, n_cpus):
     return pd.concat(nodelist, ignore_index=True)
 
 def louvain_from_preclusters(cdr3, preclust):
+    '''
+    Second pass using Louvain clustering, without multiprocessing.
+    '''
     initiate = True
     nodelist = pd.DataFrame(columns=["junction_aa", "cluster"])
     for c in preclust.cluster_contents():
-        try:
-            edges = create_edgelist(c)
-            if initiate:
-                nodes = louvain(cdr3, edges)
-                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
-                initiate = False
-            else:
-                nodes = louvain(cdr3, edges)
-                nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
-                nodelist = pd.concat([nodelist,nodes],ignore_index=True)
-        # If no edges can be found, leave cluster as is
-        except nx.NetworkXError:
-            try:
-                cluster = pd.DataFrame({"junction_aa": c,
-                                        "cluster": [nodelist["cluster"].max() + 1] * len(c)})
-                nodelist = pd.concat([nodelist,cluster],ignore_index=True)
-            except KeyError:
-                cluster = pd.DataFrame({"junction_aa": c, "cluster": [0] * len(c)})
-                nodelist = nodelist.append(cluster)
+        edges = create_edgelist(c)
+        if initiate:
+            nodes = louvain(cdr3, edges)
+            nodelist = pd.concat([nodelist,nodes],ignore_index=True)
+            initiate = False
+        else:
+            nodes = louvain(cdr3, edges)
+            nodes["cluster"] = nodes["cluster"] + nodelist["cluster"].max() + 1
+            nodelist = pd.concat([nodelist,nodes],ignore_index=True)
     return nodelist
