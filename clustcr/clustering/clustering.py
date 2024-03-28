@@ -341,7 +341,7 @@ class Clustering:
             # Second clustering step
             clusters = ClusteringResult(
                 MCL_multiprocessing_from_preclusters(
-                    subset["junction_aa"], super_clusters, self.mcl_params, self.n_cpus
+                    super_clusters, self.mcl_params, self.n_cpus
                     ), chain=self.chain
                                         ).clusters_df
             clusters.cluster += c # adjust cluster identifiers to ensure they stay unique
@@ -381,7 +381,7 @@ class Clustering:
             cluster_ids = range(i, min(i + clusters_per_batch, npreclusters))
             preclusters = self._batch_process_preclusters(cluster_ids)
             mcl_result = MCL_multiprocessing_from_preclusters(
-                None, preclusters, self.mcl_params, self.n_cpus
+                preclusters, self.mcl_params, self.n_cpus
                 )
             mcl_result['cluster'] += max_cluster_id + 1
             max_cluster_id = mcl_result['cluster'].max()
