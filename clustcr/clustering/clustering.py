@@ -164,6 +164,9 @@ class Clustering:
             self.n_cpus = n_cpus
 
     def _random(self, cdr3):
+        '''
+        BENCHMARKING. Creates random clusters.
+        '''
         n = round(len(cdr3) / self.rnd_chunk_size)
         sequences = list(cdr3)
         random.shuffle(sequences)
