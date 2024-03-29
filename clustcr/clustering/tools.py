@@ -68,12 +68,6 @@ def create_edgelist_vgene(clusters, filename=None):
     edges = pd.DataFrame(edgelist, columns=["source", "target"])
     for col in edges:
         edges[col] = edges[col].apply(lambda x: "_".join(x))
-    
-    # # Save edgelist to file
-    # if filename is not None:
-    #     with open(filename, 'w') as f:
-    #         for edge in edgelist:
-    #             f.write('%s\n' % edge)
 
     return edges
 
@@ -104,3 +98,8 @@ def timeit(myfunc):
         print(f'Total time to run ClusTCR: {(end-start):.3f}s')
         return result
     return timed
+
+def trim_cdr3(cdr3, n_trim=3, c_trim=2):
+    trimmed = cdr3.apply(lambda x: x[n_trim:-c_trim])
+    trim = pd.DataFrame(zip(cdr3,trimmed), columns=[cdr3.name,f'{cdr3.name}_trimmed'])
+    return trim
