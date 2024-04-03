@@ -136,7 +136,10 @@ def MCL_multiprocessing_from_preclusters(preclust, mcl_hyper, n_cpus):
     for c in range(len(nodelist)):
         if c != 0:
             nodelist[c]['cluster'] += nodelist[c - 1]['cluster'].max() + 1
-    return pd.concat(nodelist, ignore_index=True)
+    if len(nodelist) == 0:
+        return None
+    else:
+        return pd.concat(nodelist, ignore_index=True)
 
 def MCL_multiprocessing_from_preclusters_test(preclust, mcl_hyper, n_cpus):
     """

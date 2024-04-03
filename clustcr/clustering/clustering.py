@@ -342,15 +342,18 @@ class Clustering:
             subset = data[data.v_family==vgene]
             super_clusters = self._faiss(subset["junction_aa"])
             # Second clustering step
-            clusters = ClusteringResult(
-                MCL_multiprocessing_from_preclusters(
+            nl = MCL_multiprocessing_from_preclusters(
                     super_clusters, self.mcl_params, self.n_cpus
-                    ), chain=self.chain
-                                        ).clusters_df
-            clusters.cluster += c # adjust cluster identifiers to ensure they stay unique
-            subset = subset.merge(clusters, left_on="junction_aa", right_on="junction_aa")
-            result = pd.concat([result,subset],axis=0)
-            c = result.cluster.max() + 1
+                    )
+            if nl is not None:
+                cr = ClusteringResult(nl, chain=self.chain)
+                clusters = cr.clusters_df
+                clusters.cluster += c # adjust cluster identifiers to ensure they stay unique
+                subset = subset.merge(clusters, left_on="junction_aa", right_on="junction_aa")
+                result = pd.concat([result,subset],axis=0)
+                c = result.cluster.max() + 1
+            else:
+                pass
         return ClusteringResult(
             result[["junction_aa", "v_call", "cluster"]].drop_duplicates(),
             chain=self.chain
